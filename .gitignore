@@ -158,3 +158,6 @@ cache/
 
 # DS_Store
 **/.DS_Store
+
+# test
+test_model_generate.py

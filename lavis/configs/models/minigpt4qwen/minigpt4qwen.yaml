@@ -39,9 +39,6 @@ model:
   lora_r: 8
   lora_dropout: 0.05
 
-  # generation configs
-  prompt: ""
-
   # text length when training
   max_txt_len: 512
 
@@ -57,5 +54,7 @@ preprocess:
     text_processor:
         train:
           name: "blip_caption"
+          max_words: 100
         eval:
           name: "blip_caption"
+          max_words: 100

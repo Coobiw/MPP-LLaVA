@@ -40,9 +40,6 @@ model:
   lora_r: 8
   lora_dropout: 0.05
 
-  # generation configs
-  prompt: ""
-
   # text length when training
   max_txt_len: 256
 
@@ -76,9 +73,9 @@ run:
   num_workers: 4
   accum_grad_iters: 16 #1
 
-  max_len: 48 #30
-  min_len: 1 #8
-  num_beams: 5
+  max_new_tokens: 100 # 暂时没啥用，因为没实现validation
+  min_new_tokens: 1 # 同上
+  num_beams: 5 # 同上
 
   seed: 42
   output_dir: "output/debug"

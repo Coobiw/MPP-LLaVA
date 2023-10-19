@@ -264,7 +264,7 @@ def create_runner_config_validator():
     validator.add_argument(
         "runner",
         type=str,
-        choices=["runner_base", "runner_iter"],
+        choices=["runner_base"],
         help="""Runner to use. The "runner_base" uses epoch-based training while iter-based
             runner runs based on iters. Default: runner_base""",
     )
@@ -277,20 +277,9 @@ def create_runner_config_validator():
         Default: None""",
     )
     validator.add_argument(
-        "max_iters",
-        type=float,
-        help="Maximum number of iterations to run.",
-    )
-    validator.add_argument(
         "max_epoch",
         type=int,
         help="Maximum number of epochs to run.",
-    )
-    # add arguments for iters_per_inner_epoch
-    validator.add_argument(
-        "iters_per_inner_epoch",
-        type=float,
-        help="Number of iterations per inner epoch. This is required when runner is runner_iter.",
     )
     lr_scheds_choices = registry.list_lr_schedulers()
     validator.add_argument(
@@ -426,13 +415,13 @@ def create_runner_config_validator():
     # generation task specific arguments
     # add arguments for maximal length of text output
     validator.add_argument(
-        "max_len",
+        "max_new_tokens",
         type=int,
         help="Maximal length of text output.",
     )
     # add arguments for minimal length of text output
     validator.add_argument(
-        "min_len",
+        "min_new_tokens",
         type=int,
         help="Minimal length of text output.",
     )

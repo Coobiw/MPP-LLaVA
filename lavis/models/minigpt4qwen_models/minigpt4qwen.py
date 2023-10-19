@@ -44,7 +44,6 @@ class Minigpt4Qwen(Blip2Base):
         freeze_vit=True,
         num_query_token=32,
         llm_model="",
-        prompt="",
         max_txt_len=512,
         apply_lemmatizer=False,
         qformer_text_input=True,
@@ -63,7 +62,7 @@ class Minigpt4Qwen(Blip2Base):
         assert transformers_version >= version.parse("4.32"), "Minigpt4Qwen requires transformers>=4.32"
         from transformers import AutoTokenizer, AutoModelForCausalLM, AutoConfig
         
-        self.tokenizer = self.init_tokenizer(truncation_side="left")
+        # self.tokenizer = self.init_tokenizer(truncation_side="left")
 
         self.visual_encoder, self.ln_vision = self.init_vision_encoder(
             vit_model, img_size, drop_path_rate, use_grad_checkpoint, vit_precision
@@ -128,6 +127,8 @@ class Minigpt4Qwen(Blip2Base):
         )
 
         self.llm_tokenizer.pad_token_id = self.llm_tokenizer.eod_id
+        self.replace_image_token_id = self.llm_tokenizer("<|extra_0|>").input_ids[0]
+        self.replace_image_string = '<|extra_0|>'
         # self.llm_model.resize_token_embeddings(len(self.llm_tokenizer))
 
         for name, param in self.llm_model.named_parameters():
@@ -143,9 +144,6 @@ class Minigpt4Qwen(Blip2Base):
             self.llm_proj.train = disabled_train
 
         self.max_txt_len = max_txt_len
-        self.prompt = prompt
-        prompt_tokens = self.llm_tokenizer(self.prompt, return_tensors="pt")
-        self.prompt_length = prompt_tokens.attention_mask.sum(1)
 
         self._lemmatizer = None
 
@@ -193,17 +191,9 @@ class Minigpt4Qwen(Blip2Base):
             inputs_llm = self.llm_proj(query_output.last_hidden_state[:,:query_tokens.size(1),:])
         
         return inputs_llm
-
-    def forward(self, samples):
-        # print('-----------------')
-        # print(samples["text_input"])
-        # print(samples["text_output"])
-        # print('-----------------')
-
-        image = samples["image"]
-        inputs_llm = self.encode_image(image)
-
-        def preprocess(
+    
+    @staticmethod
+    def preprocess(
             sources,
             tokenizer: transformers.PreTrainedTokenizer,
             max_len: int,
@@ -219,8 +209,6 @@ class Minigpt4Qwen(Blip2Base):
             _system = tokenizer('system').input_ids + nl_tokens
             _user = tokenizer('user').input_ids + nl_tokens
             _assistant = tokenizer('assistant').input_ids + nl_tokens
-
-            replace_image_token = tokenizer("<|extra_0|>").input_ids
 
             # Apply prompt templates
             input_ids, targets = [], []
@@ -242,7 +230,7 @@ class Minigpt4Qwen(Blip2Base):
                         assert len(content.split("<ImageHere>")) == 2, 'Only support one image in one sentence'
                         c_before, c_after = content.split("<ImageHere>")
                         _input_id = tokenizer(role).input_ids + nl_tokens + \
-                            tokenizer(c_before).input_ids + replace_image_token * image_len + tokenizer(c_after).input_ids + [im_end] + nl_tokens
+                            tokenizer(c_before).input_ids + [self.replace_image_token_id] * image_len + tokenizer(c_after).input_ids + [im_end] + nl_tokens
                     else:
                         _input_id = tokenizer(role).input_ids + nl_tokens + \
                             tokenizer(content).input_ids + [im_end] + nl_tokens
@@ -268,11 +256,19 @@ class Minigpt4Qwen(Blip2Base):
                 input_ids=input_ids,
                 labels=targets,
                 attention_mask=input_ids.ne(tokenizer.pad_token_id),
-            ), replace_image_token[0]
+            )
 
+    def forward(self, samples):
+        # print('-----------------')
+        # print(samples["text_input"])
+        # print(samples["text_output"])
+        # print('-----------------')
+
+        image = samples["image"]
+        inputs_llm = self.encode_image(image)
 
         sources = samples["conversations"]
-        data_dict,replace_image_token_id = preprocess(sources,self.llm_tokenizer,self.max_txt_len,image_len=self.num_query_token)
+        data_dict = self.preprocess(sources,self.llm_tokenizer,self.max_txt_len,image_len=self.num_query_token)
         device = self.llm_model.device
         llm_tokens = data_dict['input_ids'].to(device)
         targets = data_dict['labels'].to(device)
@@ -280,7 +276,7 @@ class Minigpt4Qwen(Blip2Base):
 
 
         with self.maybe_autocast(self.autocast_dtype):
-            replace_image_idxs = torch.where(llm_tokens == replace_image_token_id)
+            replace_image_idxs = torch.where(llm_tokens == self.replace_image_token_id)
             inputs_embeds = self.llm_model.get_input_embeddings()(llm_tokens) # B, L, C
             _,_,channels = inputs_embeds.shape
             inputs_embeds[replace_image_idxs[0],replace_image_idxs[1]] = inputs_llm.view(-1,channels).to(inputs_embeds.dtype)
@@ -301,90 +297,53 @@ class Minigpt4Qwen(Blip2Base):
         samples,
         use_nucleus_sampling=False,
         num_beams=5,
-        max_length=256,
-        min_length=1,
+        max_new_tokens=100,
+        min_new_tokens=1,
         top_p=0.9,
         repetition_penalty=1.5,
         length_penalty=1,
         num_captions=1,
         temperature=1,
     ):
-        self.llm_tokenizer.padding_side = "left"
-
-        if "prompt" in samples.keys():
-            prompt = samples["prompt"]
-        else:
-            prompt = self.prompt
+        self.llm_tokenizer.padding_side = 'left'
+        self.llm_tokenizer.pad_token_id = self.llm_tokenizer.eod_id
 
         image = samples["image"]
-
+        text = samples['text']
         bs = image.size(0)
 
-        if isinstance(prompt, str):
-            prompt = [prompt] * bs
+        if bs > 1 and num_captions > 1:
+            assert False, 'if bs > 1, num_captions must be equal to 1 now.'
+        if isinstance(text, str):
+            text = [text] * bs
         else:
-            assert len(prompt) == bs, "The number of prompts must be equal to the batch size."
+            assert len(text) == bs, "The number of texts must be equal to the batch size."
 
-        # For TextCaps
-        if "ocr_tokens" in samples.keys() and "{}" in prompt[0]:
-            prompt = [p.format(', '.join(samples['ocr_tokens'][i][:30])) for i, p in enumerate(prompt)]
-
-        query_tokens = self.query_tokens.expand(bs, -1, -1)
         if self.qformer_text_input:
             raise NotImplementedError
 
         # For video data
         if image.dim() == 5:
-            inputs_llm, atts_llm = [], []
-            for j in range(image.size(2)):
-                this_frame = image[:,:,j,:,:]
-                with self.maybe_autocast():
-                    frame_embeds = self.ln_vision(self.visual_encoder(this_frame))
-                frame_atts = torch.ones(frame_embeds.size()[:-1], dtype=torch.long).to(image.device)
-
-                if self.qformer_text_input:
-                    raise NotImplementedError
-                else:
-                    frame_query_output = self.Qformer.bert(
-                        query_embeds=query_tokens,
-                        encoder_hidden_states=frame_embeds,
-                        encoder_attention_mask=frame_atts,
-                        return_dict=True,
-                    )
-                frame_inputs_llm = self.llm_proj(frame_query_output.last_hidden_state[:,:query_tokens.size(1),:])
-                frame_atts_llm = torch.ones(frame_inputs_llm.size()[:-1], dtype=torch.long).to(image.device)
-                inputs_llm.append(frame_inputs_llm)
-                atts_llm.append(frame_atts_llm)
-            inputs_llm = torch.cat(inputs_llm, dim=1)
-            atts_llm = torch.cat(atts_llm, dim=1)
+            assert False, 'the dim of image is 5, but now we don\'t support video input'
+        elif image.dim() == 4:
+            inputs_llm = self.encode_image(image)
         else:
-            with self.maybe_autocast():
-                image_embeds = self.ln_vision(self.visual_encoder(image))
-            image_atts = torch.ones(image_embeds.size()[:-1], dtype=torch.long).to(image.device)
+            assert False,f'the dim of image is {image.dim()}, we only support image input with a shape [B,C,H,W].'
 
-            if self.qformer_text_input:
-                raise NotImplementedError
-            else:
-                query_output = self.Qformer.bert(
-                    query_embeds=query_tokens,
-                    encoder_hidden_states=image_embeds,
-                    encoder_attention_mask=image_atts,
-                    return_dict=True,
-                )
+        for i in range(bs):
+            assert len(text[i].split('<ImageHere>')) == 2, 'must be one and only image !'
+            replace_string = ''.join([self.replace_image_string] * self.num_query_token)
+            text[i] = text[i].replace('<ImageHere>',replace_string)
 
-            inputs_llm = self.llm_proj(query_output.last_hidden_state[:,:query_tokens.size(1),:])
-            atts_llm = torch.ones(inputs_llm.size()[:-1], dtype=torch.long).to(image.device)
-
-        llm_tokens = self.llm_tokenizer(
-            prompt,
-            padding="longest",
-            return_tensors="pt"
-        ).to(image.device)
+        llm_tokens = self.llm_tokenizer(text, return_tensors='pt', padding='longest')
+        attention_mask = llm_tokens.attention_mask.to(image.device)
+        llm_tokens.input_ids = llm_tokens.input_ids.to(image.device)
 
         with self.maybe_autocast(self.autocast_dtype):
-            inputs_embeds = self.llm_model.get_input_embeddings()(llm_tokens.input_ids)
-            inputs_embeds = torch.cat([inputs_llm, inputs_embeds], dim=1)
-            attention_mask = torch.cat([atts_llm, llm_tokens.attention_mask], dim=1)
+            replace_image_idxs = torch.where(llm_tokens.input_ids == self.replace_image_token_id)
+            inputs_embeds = self.llm_model.get_input_embeddings()(llm_tokens.input_ids) # B, L, C
+            _,_,channels = inputs_embeds.shape
+            inputs_embeds[replace_image_idxs[0],replace_image_idxs[1]] = inputs_llm.view(-1,channels).to(inputs_embeds.dtype)
 
             outputs = self.llm_model.generate(
                 inputs_embeds=inputs_embeds,
@@ -393,19 +352,20 @@ class Minigpt4Qwen(Blip2Base):
                 top_p=top_p,
                 temperature=temperature,
                 num_beams=num_beams,
-                max_length=max_length,
-                min_length=min_length,
-                eos_token_id=self.llm_tokenizer.eos_token_id,
-                pad_token_id=self.llm_tokenizer.pad_token_id,
-                bos_token_id=self.llm_tokenizer.bos_token_id,
+                max_new_tokens=max_new_tokens,
+                min_new_tokens=min_new_tokens,
                 repetition_penalty=repetition_penalty,
                 length_penalty=length_penalty,
+                output_hidden_states=True,
+                use_cache=True,
                 num_return_sequences=num_captions,
+                pad_token_id=self.llm_tokenizer.eod_id,
+                bos_token_id=self.llm_tokenizer('\n').input_ids[0],
+                eos_token_id=self.llm_tokenizer.im_end_id,
             )
-
-        outputs[outputs == 0] = 2 # convert output id 0 to 2 (eos_token_id)
-        output_text = self.llm_tokenizer.batch_decode(outputs, skip_special_tokens=True)
-        output_text = [text.strip() for text in output_text]
+        output_text = [
+            self.llm_tokenizer.decode(_[:].cpu(),skip_special_tokens=True).strip() for _ in outputs
+        ]
 
         return output_text
 
@@ -449,7 +409,6 @@ class Minigpt4Qwen(Blip2Base):
     @classmethod
     def from_config(cls, cfg):
         # text config
-        prompt = cfg.get("prompt", "")
         max_txt_len = cfg.get("max_txt_len", 512)
 
         apply_lemmatizer = cfg.get("apply_lemmatizer", False)
@@ -500,7 +459,6 @@ class Minigpt4Qwen(Blip2Base):
             freeze_vit=freeze_vit,
             num_query_token=num_query_token,
             llm_model=llm_model,
-            prompt=prompt,
             max_txt_len=max_txt_len,
             apply_lemmatizer=apply_lemmatizer,
             qformer_text_input=qformer_text_input,
