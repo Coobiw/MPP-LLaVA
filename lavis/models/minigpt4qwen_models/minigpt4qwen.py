@@ -18,6 +18,23 @@ from lavis.common.registry import registry
 from lavis.models.minigpt4qwen_models.blip2 import Blip2Base, disabled_train
 
 from functools import partial
+import re
+from copy import deepcopy
+
+from .chat_utils import get_stop_words_ids, make_context, decode_tokens
+
+_ERROR_BAD_CHAT_FORMAT = """\
+We detect you are probably using the pretrained model (rather than chat model) for chatting, since the chat_format in generation_config is not "chatml".
+If you are directly using the model downloaded from Huggingface, please make sure you are using our "Qwen/Qwen-7B-Chat" Huggingface model (rather than "Qwen/Qwen-7B") when you call model.chat().
+我们检测到您可能在使用预训练模型（而非chat模型）进行多轮chat，因为您当前在generation_config指定的chat_format，并未设置为我们在对话中所支持的"chatml"格式。
+如果您在直接使用我们从Huggingface提供的模型，请确保您在调用model.chat()时，使用的是"Qwen/Qwen-7B-Chat"模型（而非"Qwen/Qwen-7B"预训练模型）。
+"""
+
+_SENTINEL = object()
+_ERROR_STREAM_IN_CHAT = """\
+Pass argument `stream` to model.chat() is buggy, deprecated, and marked for removal. Please use model.chat_stream(...) instead of model.chat(..., stream=True).
+向model.chat()传入参数stream的用法可能存在Bug，该用法已被废弃，将在未来被移除。请使用model.chat_stream(...)代替model.chat(..., stream=True)。
+"""
 
 @registry.register_model("minigpt4qwen")
 class Minigpt4Qwen(Blip2Base):
@@ -192,8 +209,8 @@ class Minigpt4Qwen(Blip2Base):
         
         return inputs_llm
     
-    @staticmethod
     def preprocess(
+            self,
             sources,
             tokenizer: transformers.PreTrainedTokenizer,
             max_len: int,
@@ -225,6 +242,9 @@ class Minigpt4Qwen(Blip2Base):
                 for j, sentence in enumerate(source):
                     role = roles[sentence["from"]]
                     content = sentence["value"]
+                    if self.replace_image_string in content:
+                        content.replace(self.replace_image_string,"")
+
                     if "<ImageHere>" in content and role == '<|im_start|>user':
                         img_visit_cnt += 1
                         assert len(content.split("<ImageHere>")) == 2, 'Only support one image in one sentence'
@@ -295,21 +315,19 @@ class Minigpt4Qwen(Blip2Base):
     def generate(
         self,
         samples,
-        use_nucleus_sampling=False,
-        num_beams=5,
-        max_new_tokens=100,
-        min_new_tokens=1,
-        top_p=0.9,
-        repetition_penalty=1.5,
-        length_penalty=1,
-        num_captions=1,
-        temperature=1,
+        chat=False,
+        generation_config=None,
+        stop_words_ids=None,
+        return_dict_in_generate=False,
+        **kwargs
     ):
+        generation_config = generation_config if generation_config is not None else self.llm_model.generation_config
+
         self.llm_tokenizer.padding_side = 'left'
         self.llm_tokenizer.pad_token_id = self.llm_tokenizer.eod_id
 
-        image = samples["image"]
-        text = samples['text']
+        image = deepcopy(samples["image"])
+        text = deepcopy(samples['text'])
         bs = image.size(0)
 
         if bs > 1 and num_captions > 1:
@@ -331,8 +349,10 @@ class Minigpt4Qwen(Blip2Base):
             assert False,f'the dim of image is {image.dim()}, we only support image input with a shape [B,C,H,W].'
 
         for i in range(bs):
-            assert len(text[i].split('<ImageHere>')) == 2, 'must be one and only image !'
+            assert len(text[i].split('<ImageHere>')) == 2, f'must be one and only image !,now split_length = {len(text[i].split("<ImageHere>"))}'
             replace_string = ''.join([self.replace_image_string] * self.num_query_token)
+            if self.replace_image_string in text[i]:
+                text[i].replace(self.replace_image_string,"")
             text[i] = text[i].replace('<ImageHere>',replace_string)
 
         llm_tokens = self.llm_tokenizer(text, return_tensors='pt', padding='longest')
@@ -348,26 +368,93 @@ class Minigpt4Qwen(Blip2Base):
             outputs = self.llm_model.generate(
                 inputs_embeds=inputs_embeds,
                 attention_mask=attention_mask,
-                do_sample=use_nucleus_sampling,
-                top_p=top_p,
-                temperature=temperature,
-                num_beams=num_beams,
-                max_new_tokens=max_new_tokens,
-                min_new_tokens=min_new_tokens,
-                repetition_penalty=repetition_penalty,
-                length_penalty=length_penalty,
-                output_hidden_states=True,
-                use_cache=True,
-                num_return_sequences=num_captions,
+                stop_words_ids=stop_words_ids,
+                return_dict_in_generate=False,
+                generation_config=generation_config,
                 pad_token_id=self.llm_tokenizer.eod_id,
                 bos_token_id=self.llm_tokenizer('\n').input_ids[0],
-                eos_token_id=self.llm_tokenizer.im_end_id,
+                eos_token_id=[self.llm_tokenizer.im_end_id,self.llm_tokenizer.im_start_id],
             )
-        output_text = [
-            self.llm_tokenizer.decode(_[:].cpu(),skip_special_tokens=True).strip() for _ in outputs
-        ]
+        if not chat:
+            output_text = [
+                self.llm_tokenizer.decode(_[:].cpu(),skip_special_tokens=True).strip() for _ in outputs
+            ]
+            return output_text
+        else:
+            return outputs
+    
+    def chat(
+        self,
+        query,
+        history,
+        image_tensor,
+        system = "You are a helpful assistant.",
+        append_history = True,
+        stream = _SENTINEL,
+        stop_words_ids = None,
+        generation_config = None,
+        **kwargs,
+    ):
+        generation_config = generation_config if generation_config is not None else self.llm_model.generation_config
 
-        return output_text
+        assert stream is _SENTINEL, _ERROR_STREAM_IN_CHAT
+        assert generation_config.chat_format == 'chatml', _ERROR_BAD_CHAT_FORMAT
+
+        if history is None:
+            history = []
+        if stop_words_ids is None:
+            stop_words_ids = []
+
+        max_window_size = kwargs.get('max_window_size', None)
+        if max_window_size is None:
+            max_window_size = generation_config.max_window_size
+        
+        if history is None:
+            history = []
+        if stop_words_ids is None:
+            stop_words_ids = []
+
+        max_window_size = kwargs.get('max_window_size', None)
+        if max_window_size is None:
+            max_window_size = generation_config.max_window_size
+        raw_text, context_tokens = make_context(
+            self.llm_tokenizer,
+            query,
+            history=history,
+            system=system,
+            max_window_size=max_window_size,
+            chat_format=generation_config.chat_format,
+        )
+
+        sample = {
+            "image": image_tensor,
+            "text": raw_text
+        }
+
+        stop_words_ids.extend(get_stop_words_ids(
+            generation_config.chat_format, self.llm_tokenizer
+        ))
+        outputs = self.generate(
+                    sample,
+                    chat=True,
+                    stop_words_ids=stop_words_ids,
+                    return_dict_in_generate=False,
+                    generation_config=generation_config,
+                    **kwargs,
+                )
+
+        response = decode_tokens(
+            outputs[0],
+            self.llm_tokenizer,
+            chat_format=generation_config.chat_format,
+            verbose=False,
+            errors='replace'
+        )
+
+        if append_history:
+            history.append((query, response))
+
+        return response, history
 
     def _lemmatize(self, answers):
         def apply(answer):
