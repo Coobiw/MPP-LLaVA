@@ -19,6 +19,24 @@ from torchvision.transforms.functional import resize
 from PIL import ImageOps
 import numpy as np
 
+# DIY
+@registry.register_processor("base_instruction")
+class BaseInstructionProcessor(BaseProcessor):
+    def __init__(self, max_words=50):
+        self.max_words = max_words
+
+    def __call__(self, question):
+        return question
+
+    @classmethod
+    def from_config(cls, cfg=None):
+        if cfg is None:
+            cfg = OmegaConf.create()
+
+        max_words = cfg.get("max_words", 50)
+
+        return cls(max_words=max_words)
+
 # from lavis
 @registry.register_processor("base_text")
 class BaseTextProcessor(BaseProcessor):
@@ -52,32 +70,6 @@ class BaseTextProcessor(BaseProcessor):
             question = " ".join(question_words[: self.max_words])
 
         return question
-
-# random sample some prompt from the prompt list
-# DIY (not from lavis)
-@registry.register_processor("minigpt4qwen_caption")
-class Minigpt4QwenCaptionProcessor(BaseProcessor):
-    def __init__(self, max_words=50):
-        self.max_words = max_words
-        self.prompt_lst = [
-            "<Img><ImageHere></Img> Describe this image in detail.",
-            "<Img><ImageHere></Img> Take a look at this image and describe what you notice.",
-            "<Img><ImageHere></Img> Please provide a detailed description of the picture.",
-            "<Img><ImageHere></Img> Could you describe the contents of this image for me?",
-        ]
-
-    @classmethod
-    def from_config(cls, cfg=None):
-        if cfg is None:
-            cfg = OmegaConf.create()
-
-        max_words = cfg.get("max_words", 50)
-
-        return cls(max_words=max_words)
-    
-    def __call__(self):
-        instruction = random.choice(self.prompt_lst)
-        return instruction
 
 # from lavis
 @registry.register_processor("blip_caption")

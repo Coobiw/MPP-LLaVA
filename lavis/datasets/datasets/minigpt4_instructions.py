@@ -21,13 +21,13 @@ class __DisplMixin:
         )
 
 
-class Minigpt4InstructionDataset(Minigpt4QwenDataset, __DisplMixin):
+class InstructionDataset(Minigpt4QwenDataset, __DisplMixin):
     def __init__(self, vis_processor, text_processor, vis_root, ann_paths):
         self.vis_root = vis_root
 
         self.annotation = []
         for ann_path in ann_paths:
-            self.annotation.extend(json.load(open(ann_path, "r"))['annotations'])
+            self.annotation.extend(json.load(open(ann_path, "r")))
 
         self.vis_processor = vis_processor
         self.text_processor = text_processor
@@ -37,17 +37,17 @@ class Minigpt4InstructionDataset(Minigpt4QwenDataset, __DisplMixin):
     def __getitem__(self, index):
         ann = self.annotation[index]
 
-        image_path = os.path.join(self.vis_root,ann['image_id']+'.jpg')
+        image_path = os.path.join(self.vis_root,ann['image'])
         image = Image.open(image_path).convert("RGB")
 
         image = self.vis_processor(image)
-        instruction = self.text_processor()
+        instruction = self.text_processor(ann['instruction'])
 
-        caption = ann['caption']
+        output = ann['output']
 
         conversations = [
             {"from": "user", "value":instruction},
-            {"from": "assistant", "value": caption},
+            {"from": "assistant", "value": output},
         ]
 
         return {

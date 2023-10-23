@@ -9,11 +9,18 @@ from lavis.datasets.builders.base_dataset_builder import BaseDatasetBuilder
 
 from lavis.common.registry import registry
 
-from lavis.datasets.datasets.minigpt4_instructions import Minigpt4InstructionDataset
+from lavis.datasets.datasets.minigpt4_instructions import InstructionDataset
 
 @registry.register_builder("minigpt4_instruction")
 class Minigpt4InstructionBuilder(BaseDatasetBuilder):
-    train_dataset_cls = Minigpt4InstructionDataset
+    train_dataset_cls = InstructionDataset
     DATASET_CONFIG_DICT = {
         'default': 'configs/datasets/minigpt4_instruction/defaults_instruction.yaml'
+    }
+
+@registry.register_builder("llava_instruction")
+class LlavaInstructionBuilder(BaseDatasetBuilder):
+    train_dataset_cls = InstructionDataset
+    DATASET_CONFIG_DICT = {
+        'default': 'configs/datasets/llava_instruction/defaults_instruction.yaml'
     }

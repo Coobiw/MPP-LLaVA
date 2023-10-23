@@ -11,7 +11,7 @@ from lavis.processors.blip_processors import (
     Blip2ImageTrainProcessor,
     BlipImageEvalProcessor,
     BlipCaptionProcessor,
-    Minigpt4QwenCaptionProcessor
+    BaseInstructionProcessor,
 )
 
 from lavis.common.registry import registry
@@ -23,7 +23,7 @@ __all__ = [
     "BlipImageEvalProcessor",
     "BlipCaptionProcessor",
     # DIY
-    "Minigpt4QwenCaptionProcessor",
+    "BaseInstructionProcessor",
 ]
 
 
