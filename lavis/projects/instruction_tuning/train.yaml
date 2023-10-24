@@ -82,9 +82,9 @@ run:
   num_workers: 4
   accum_grad_iters: 16 #1
 
-  max_new_tokens: 100 # 暂时没啥用，因为没实现validation
-  min_new_tokens: 1 # 同上
-  num_beams: 5 # 同上
+  # max_new_tokens: 100 # 暂时没啥用，因为没实现validation
+  # min_new_tokens: 1 # 同上
+  # num_beams: 5 # 同上
 
   seed: 42
   output_dir: "output/instruction_tuning/lr1e-4"
@@ -101,4 +101,4 @@ run:
   world_size: 1
   dist_url: "env://"
   distributed: True
-  fsdp: False
+  # fsdp: False
