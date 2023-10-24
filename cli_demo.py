@@ -153,6 +153,9 @@ def main():
     first = True
     while True:
         query = _get_input()
+        
+        if not history:
+            first = True
 
         # Process commands.
         if query.startswith(':'):

@@ -76,7 +76,7 @@ run:
   warmup_steps: 500
   weight_decay: 0.05
   grad_norm_clip: 1.
-  max_epoch: 5 #5
+  max_epoch: 10 #5
   batch_size_train: 1 #16
   batch_size_eval: 1
   num_workers: 4
@@ -87,7 +87,7 @@ run:
   num_beams: 5 # 同上
 
   seed: 42
-  output_dir: "output/instruction_tuning"
+  output_dir: "output/instruction_tuning/lr1e-4"
 
   amp: False # True
   resume_ckpt_path: null
