@@ -39,7 +39,7 @@
 
 ## Installation
 
-```
+```bash
 conda create -n minigpt4qwen python=3.8
 conda activate minigpt4qwen
 pip install -e .
@@ -51,7 +51,7 @@ pip install -e .
 
 > 请将模型权重下载后都放在 `cache/ckpt`下
 
-```
+```bash
 mkdir cache
 cd cache
 mkdir ckpt
@@ -64,7 +64,7 @@ mkdir dataset
 
 [eva_vit_g.pth](https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/BLIP2/eva_vit_g.pth)
 
-```
+```bash
 wget https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/BLIP2/eva_vit_g.pth
 ```
 
@@ -78,7 +78,7 @@ wget https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/BL
 
 [blip2_pretrained_flant5xxl.pth](https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/BLIP2/blip2_pretrained_flant5xxl.pth)
 
-```
+```bash
 wget https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/BLIP2/blip2_pretrained_flant5xxl.pth
 ```
 
@@ -90,14 +90,14 @@ wget https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/BL
 
 在本仓库的release里放有checkpoint，可以直接下载
 
-```
+```bash
 wget https://github.com/Coobiw/MiniGPT4Qwen/releases/download/instruction-data_and_checkpointv1.0/ckpt.zip
 unzip ckpt.zip
 ```
 
 目录结构：
 
-```
+```bash
 ├── cache
 │   ├── ckpt
 │   │   ├── bert-base-uncased
@@ -110,7 +110,7 @@ unzip ckpt.zip
 
 ### 运行test_model_chat.py进行初步尝试
 
-```
+```bash
 python test_model_chat.py
 ```
 
@@ -118,7 +118,7 @@ python test_model_chat.py
 
 ### 运行命令行demo
 
-```
+```bash
 python cli_demo.py --checkpoint-path xxxxxx
 ```
 
@@ -144,14 +144,14 @@ python cli_demo.py --checkpoint-path xxxxxx
 
 为了支持当前的 `lavis`库的训练框架，我对数据集的annotations进行了重新处理，放到了本仓库的release中，下载链接：[instruction_data](https://github.com/Coobiw/MiniGPT4Qwen/releases/download/instruction-data_and_checkpointv1.0/instruction_data.zip)
 
-```
+```bash
 wget https://github.com/Coobiw/MiniGPT4Qwen/releases/download/instruction-data_and_checkpointv1.0/instruction_data.zip
 unzip instruction_data
 ```
 
 最后需要将数据集放入 `./cache/dataset`中，目录结构如下：
 
-```
+```bash
 ├── cache
 │   └── dataset
 │       ├── llava
@@ -170,13 +170,13 @@ unzip instruction_data
 
 单卡：
 
-```
+```bash
 CUDA_VISIBLE_DEVICES=xxx python train.py --cfg-path lavis/projects/instruction_tuning/train.yaml
 ```
 
 多卡：
 
-```
+```bash
 CUDA_VISIBLE_DEVICES=xxx python -m torch.distributed.run --nproc_per_node=8 train.py --cfg-path lavis/projects/instruction_tuning/train.yaml
 ```
 
