@@ -11,9 +11,9 @@ from transformers.generation import GenerationConfig
 device = 'cuda'
 load_model_and_preprocess = partial(load_model_and_preprocess,is_eval=True,device=device)
 
-ckpt_path = 'lavis/output/debug/20231017202/checkpoint_4.pth'
+ckpt_path = 'lavis/output/instruction_tuning/lr1e-4/20231024110/checkpoint_9.pth'
 
-img_path = 'cache/dataset/minigpt4_dataset/second_period/cc_sbu_align/image/3.jpg'
+img_path = 'examples/minigpt4_image_3.jpg'
 image = Image.open(img_path).convert('RGB')
 text = '<|im_start|>system\nYou are a helpful assistant.<|im_end|>\n<|im_start|>user\n<Img><ImageHere></Img> Describe this image in detail.<|im_end|>\n<|im_start|>assistant'
 model, vis_processors, txt_processors = load_model_and_preprocess("minigpt4qwen", "qwen7b_chat")
