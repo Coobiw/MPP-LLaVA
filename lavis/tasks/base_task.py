@@ -65,7 +65,7 @@ class BaseTask:
         loss_dict = {}
         for k,v in output.items():
             if "loss" in k:
-                loss_dict[k] = v
+                loss_dict[k] = v.detach().clone() # not affect loss_dict values for logging
         return output["loss"], loss_dict
 
     def valid_step(self, model, samples):
@@ -223,8 +223,7 @@ class BaseTask:
 
             with torch.cuda.amp.autocast(enabled=use_amp):
                 loss, loss_dict = self.train_step(model=model, samples=samples)
-                loss /= accum_grad_iters #TODO: not affect loss_dict values for logging
-            
+                loss /= accum_grad_iters # not affect loss_dict values for logging
             # if not (torch.isnan(loss) or torch.isinf(loss)):
             #     print(f"Valid loss in process {torch.distributed.get_rank()}: {loss.item()}")
             # else:
