@@ -27,7 +27,7 @@
 
 ## 所需计算资源
 
-本项目使用了8张 `3090 24G`，进行训练和推理。**实际上，单张24G的3090也能够满足计算需求。**
+本项目使用了8张 `3090 24G`，进行训练，单卡推理。**实际上，单张24G的3090也能够满足训练的计算需求，但需要调大梯度积累。**
 
 ## TODO LIST
 
@@ -195,6 +195,7 @@ CUDA_VISIBLE_DEVICES=xxx python -m torch.distributed.run --nproc_per_node=8 trai
 - [Lavis](https://github.com/salesforce/LAVIS) 本仓库是基于lavis进行构建的
 - [QwenLM](https://github.com/QwenLM/Qwen) 本仓库的语言模型采用Qwen-7B-Chat
 - [MiniGPT4](https://github.com/Vision-CAIR/MiniGPT-4) 本仓库的主要思想来自MiniGPT4
+- [MMPretrain](https://github.com/open-mmlab/mmpretrain) 提供所需的双语指令微调数据集
 
 ## License
 
