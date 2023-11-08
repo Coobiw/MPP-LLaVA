@@ -330,8 +330,6 @@ class Minigpt4Qwen(Blip2Base):
         text = deepcopy(samples['text'])
         bs = image.size(0)
 
-        if bs > 1 and num_captions > 1:
-            assert False, 'if bs > 1, num_captions must be equal to 1 now.'
         if isinstance(text, str):
             text = [text] * bs
         else:

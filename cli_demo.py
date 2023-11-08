@@ -19,8 +19,6 @@ from transformers.trainer_utils import set_seed
 from functools import partial
 from PIL import Image
 
-DEFAULT_CKPT_PATH = 'Qwen/Qwen-7B-Chat'
-
 _WELCOME_MSG = '''\
 Welcome to use MiniGPT4Qwen(based on LAVIS, MiniGPT4 and Qwen-Chat model), type text to start chat, type :h to show command help.
 (欢迎使用 Qwen-Chat 模型，输入内容即可进行对话，:h 显示命令帮助。)
@@ -48,7 +46,6 @@ def _load_model_processor(args):
     if args.cpu_only:
         device_map = "cpu"
     else:
-        device_map = "auto"
         device_map = "cuda"
     
     global load_model_and_preprocess
@@ -131,7 +128,7 @@ def _get_image_input():
 def main():
     parser = argparse.ArgumentParser(
         description='QWen-Chat command-line interactive chat demo.')
-    parser.add_argument("-c", "--checkpoint-path", type=str, default=DEFAULT_CKPT_PATH,
+    parser.add_argument("-c", "--checkpoint-path", type=str,
                         help="Checkpoint name or path, default to %(default)r")
     parser.add_argument("-s", "--seed", type=int, default=42, help="Random seed")
     parser.add_argument("--cpu-only", action="store_true", help="Run demo with CPU only")

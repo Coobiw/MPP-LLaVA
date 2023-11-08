@@ -33,7 +33,7 @@
 
 - [ ] 支持deepspeed
 - [ ] 支持pytorch原生FSDP
-- [ ] 开放gradio WebUI demo
+- [x] 开放gradio WebUI demo
 - [X] 开放所用数据集和checkpoint
 - [X] 开放源代码
 
@@ -182,6 +182,8 @@ CUDA_VISIBLE_DEVICES=xxx python -m torch.distributed.run --nproc_per_node=8 trai
 
 ## Minigpt4Qwen对话示例
 
+### 命令行demo(cli_demo)
+
 输入图片:
 
  ![](./examples/minigpt4_image_3.jpg)
@@ -189,6 +191,16 @@ CUDA_VISIBLE_DEVICES=xxx python -m torch.distributed.run --nproc_per_node=8 trai
 对话内容展示：（通过 `:his`)
 
 ![image-20231026014107033](./assets/image-20231026014107033.png)
+
+### webui demo
+
+![image-20231108183204922](/Users/qubowen/learning/LLM/Minigpt4Qwen/MiniGPT4Qwen/assets/image-20231108183204922.png)
+
+![image-20231108183230619](/Users/qubowen/learning/LLM/Minigpt4Qwen/MiniGPT4Qwen/assets/image-20231108183230619.png)
+
+**开启do_sample和beam search**
+
+![image-20231108183524096](/Users/qubowen/learning/LLM/Minigpt4Qwen/MiniGPT4Qwen/assets/image-20231108183524096.png)
 
 ## Acknowledgement
 
