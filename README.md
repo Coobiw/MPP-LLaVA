@@ -194,13 +194,13 @@ CUDA_VISIBLE_DEVICES=xxx python -m torch.distributed.run --nproc_per_node=8 trai
 
 ### webui demo
 
-![image-20231108183204922](/Users/qubowen/learning/LLM/Minigpt4Qwen/MiniGPT4Qwen/assets/image-20231108183204922.png)
+![image-20231108183204922](assets/image-20231108183204922.png)
 
-![image-20231108183230619](/Users/qubowen/learning/LLM/Minigpt4Qwen/MiniGPT4Qwen/assets/image-20231108183230619.png)
+![image-20231108183230619](assets/image-20231108183230619.png)
 
 **开启do_sample和beam search**
 
-![image-20231108183524096](/Users/qubowen/learning/LLM/Minigpt4Qwen/MiniGPT4Qwen/assets/image-20231108183524096.png)
+![image-20231108183524096](assets/image-20231108183524096.png)
 
 ## Acknowledgement
 
