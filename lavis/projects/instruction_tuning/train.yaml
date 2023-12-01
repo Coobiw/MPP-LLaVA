@@ -18,7 +18,7 @@ model:
   image_size: 224
   drop_path_rate: 0
   use_grad_checkpoint: True
-  vit_precision: "fp16"  # 如果你要打开vit进行训练，这里需要调整成fp32，因为有进行torch.cuda.amp.autocast，需要有梯度的部分的精度为fp32
+  vit_precision: "fp16"  # 如果你要打开vit进行训练，这里需要调整成fp32,否则如果开启amp混合精度训练会有问题（在scaler处报错）
   freeze_vit: True
   unfreeze_pos_embed: False
 
