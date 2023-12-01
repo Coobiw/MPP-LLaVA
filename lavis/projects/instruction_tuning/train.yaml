@@ -18,7 +18,7 @@ model:
   image_size: 224
   drop_path_rate: 0
   use_grad_checkpoint: True
-  vit_precision: "fp16"
+  vit_precision: "fp16"  # 如果你要打开vit进行训练，这里需要调整成fp32，因为有进行torch.cuda.amp.autocast，需要有梯度的部分的精度为fp32
   freeze_vit: True
   unfreeze_pos_embed: False
 
@@ -44,7 +44,7 @@ model:
   max_txt_len: 256
 
   # autocast dtype
-  autocast_dtype: "bfloat16"
+  autocast_dtype: "bfloat16"  # 根据大语言模型的dtype选择"bfloat16"或"float16"，LLM默认情况下是根据硬件支持，支持bf16则为bf16，否则为fp16
 
 datasets:
   minigpt4_instruction: # name of the dataset builder
