@@ -43,7 +43,7 @@ model:
   # text length when training
   max_txt_len: 256
 
-  # autocast dtype
+  # autocast dtype, 会影响qformer、proj层和LLM的计算，建议根据LLM的dtype选择
   autocast_dtype: "bfloat16"  # 根据大语言模型的dtype选择"bfloat16"或"float16"，LLM默认情况下是根据硬件支持，支持bf16则为bf16，否则为fp16
 
 datasets:
@@ -89,7 +89,8 @@ run:
   seed: 42
   output_dir: "output/instruction_tuning/lr1e-4"
 
-  amp: False # True
+  # amp会影响是否使用scaler，以及base_task里train_step的autocast的时候enable参数（即是否使用autocast）
+  amp: False # 如果autocast_dtype为float16，请设置为True，为bfloat16，建议设置为False
   resume_ckpt_path: null
 
   evaluate: False
