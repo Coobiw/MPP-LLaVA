@@ -14,7 +14,7 @@
     - 对于上述的注册表中的每个组件，都提供有基类，减少代码重复
     - 去除一些重复、冗余的功能
 - 可扩展性/灵活性：自顶向下满足了
-    - 任务可扩展（类似于OpenMMLab基于MMEngine和MMCV支持了那么多视觉、多模态任务）：对于所有任务均可支持，本项目支持了图像分类（以猫狗分类为例）、Image2Prompt（为了适配本菜鸡第一次kaggle比赛（https://www.kaggle.com/competitions/stable-diffusion-image-to-prompts，最终获得银牌，简易化pipeline如下图）
+    - 任务可扩展（类似于OpenMMLab基于MMEngine和MMCV支持了那么多视觉、多模态任务）：对于所有任务均可支持，本项目支持了图像分类（以猫狗分类为例）、Image2Prompt（为了适配本菜鸡第一次kaggle比赛（https://www.kaggle.com/competitions/stable-diffusion-image-to-prompts )，最终获得银牌，简易化pipeline如下图）
     - 模型可扩展
     - 数据集可扩展性（包含预处理的可扩展性）
     - scheduler的可扩展性
