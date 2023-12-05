@@ -1,4 +1,5 @@
 - [Minigpt4Qwen](#minigpt4qwen)
+  - [附属项目](#附属项目)
   - [Introduction](#introduction)
   - [所需计算资源](#所需计算资源)
   - [TODO LIST](#todo-list)
@@ -16,6 +17,10 @@
   - [License](#license)
 
 # Minigpt4Qwen
+
+## 附属项目
+
+- 干净、灵活的Trainer：https://github.com/Coobiw/MiniGPT4Qwen/tree/master/lavis_trainer_cleaned
 
 ## Introduction
 

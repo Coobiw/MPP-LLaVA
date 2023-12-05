@@ -19,7 +19,7 @@
     - 数据集可扩展性（包含预处理的可扩展性）
     - scheduler的可扩展性
 
-![Image2Prompt的pipeline](/Users/qubowen/learning/LLM/Minigpt4Qwen/MiniGPT4Qwen/lavis_trainer_cleaned/assets/image-20231205192847950.png)
+![Image2Prompt的pipeline](./assets/image-20231205192847950.png)
 
 
 
@@ -103,4 +103,4 @@ class ExampleClsDataset(BaseDataset):
 
 ## 配置文件的大致参数说明
 
-![image-20231205193009428](/Users/qubowen/learning/LLM/Minigpt4Qwen/MiniGPT4Qwen/lavis_trainer_cleaned/assets/image-20231205193009428.png)
+![image-20231205193009428](./assets/image-20231205193009428.png)
