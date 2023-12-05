@@ -72,7 +72,6 @@ class Minigpt4Qwen(Blip2Base):
         freeze_qformer=False,
         freeze_queries=False,
         freeze_proj=False,
-        autocast_dtype=torch.float16,
     ):
         super().__init__()
         transformers_version = version.parse(transformers.__version__)
@@ -183,8 +182,6 @@ class Minigpt4Qwen(Blip2Base):
             )
             self.llm_model = get_peft_model(self.llm_model,peft_config)
             self.llm_model.print_trainable_parameters()
-        
-        self.autocast_dtype = autocast_dtype
 
     def encode_image(self, image):
         with self.maybe_autocast():
@@ -193,22 +190,21 @@ class Minigpt4Qwen(Blip2Base):
 
         bs = image.size(0)
 
-        with self.maybe_autocast(self.autocast_dtype):
-            query_tokens = self.query_tokens.expand(image_embeds.shape[0], -1, -1)
-            if self.qformer_text_input:
-                raise NotImplementedError
-            else:
-                query_output = self.Qformer.bert(
-                    query_embeds=query_tokens,
-                    encoder_hidden_states=image_embeds,
-                    encoder_attention_mask=image_atts,
-                    return_dict=True,
-                )
+        query_tokens = self.query_tokens.expand(image_embeds.shape[0], -1, -1)
+        if self.qformer_text_input:
+            raise NotImplementedError
+        else:
+            query_output = self.Qformer.bert(
+                query_embeds=query_tokens,
+                encoder_hidden_states=image_embeds,
+                encoder_attention_mask=image_atts,
+                return_dict=True,
+            )
 
-            inputs_llm = self.llm_proj(query_output.last_hidden_state[:,:query_tokens.size(1),:])
-        
+        inputs_llm = self.llm_proj(query_output.last_hidden_state[:,:query_tokens.size(1),:])
+
         return inputs_llm
-    
+
     def preprocess(
             self,
             sources,
@@ -295,17 +291,16 @@ class Minigpt4Qwen(Blip2Base):
         attention_mask = data_dict['attention_mask'].to(device)
 
 
-        with self.maybe_autocast(self.autocast_dtype):
-            replace_image_idxs = torch.where(llm_tokens == self.replace_image_token_id)
-            inputs_embeds = self.llm_model.get_input_embeddings()(llm_tokens) # B, L, C
-            _,_,channels = inputs_embeds.shape
-            inputs_embeds[replace_image_idxs[0],replace_image_idxs[1]] = inputs_llm.view(-1,channels).to(inputs_embeds.dtype)
-            outputs = self.llm_model(
-                inputs_embeds=inputs_embeds,
-                attention_mask=attention_mask,
-                return_dict=True,
-                labels=targets,
-            )
+        replace_image_idxs = torch.where(llm_tokens == self.replace_image_token_id)
+        inputs_embeds = self.llm_model.get_input_embeddings()(llm_tokens) # B, L, C
+        _,_,channels = inputs_embeds.shape
+        inputs_embeds[replace_image_idxs[0],replace_image_idxs[1]] = inputs_llm.view(-1,channels).to(inputs_embeds.dtype)
+        outputs = self.llm_model(
+            inputs_embeds=inputs_embeds,
+            attention_mask=attention_mask,
+            return_dict=True,
+            labels=targets,
+        )
 
         loss = outputs.loss
 
@@ -357,22 +352,21 @@ class Minigpt4Qwen(Blip2Base):
         attention_mask = llm_tokens.attention_mask.to(image.device)
         llm_tokens.input_ids = llm_tokens.input_ids.to(image.device)
 
-        with self.maybe_autocast(self.autocast_dtype):
-            replace_image_idxs = torch.where(llm_tokens.input_ids == self.replace_image_token_id)
-            inputs_embeds = self.llm_model.get_input_embeddings()(llm_tokens.input_ids) # B, L, C
-            _,_,channels = inputs_embeds.shape
-            inputs_embeds[replace_image_idxs[0],replace_image_idxs[1]] = inputs_llm.view(-1,channels).to(inputs_embeds.dtype)
+        replace_image_idxs = torch.where(llm_tokens.input_ids == self.replace_image_token_id)
+        inputs_embeds = self.llm_model.get_input_embeddings()(llm_tokens.input_ids) # B, L, C
+        _,_,channels = inputs_embeds.shape
+        inputs_embeds[replace_image_idxs[0],replace_image_idxs[1]] = inputs_llm.view(-1,channels).to(inputs_embeds.dtype)
 
-            outputs = self.llm_model.generate(
-                inputs_embeds=inputs_embeds,
-                attention_mask=attention_mask,
-                stop_words_ids=stop_words_ids,
-                return_dict_in_generate=False,
-                generation_config=generation_config,
-                pad_token_id=self.llm_tokenizer.eod_id,
-                bos_token_id=self.llm_tokenizer('\n').input_ids[0],
-                eos_token_id=[self.llm_tokenizer.im_end_id,self.llm_tokenizer.im_start_id],
-            )
+        outputs = self.llm_model.generate(
+            inputs_embeds=inputs_embeds,
+            attention_mask=attention_mask,
+            stop_words_ids=stop_words_ids,
+            return_dict_in_generate=False,
+            generation_config=generation_config,
+            pad_token_id=self.llm_tokenizer.eod_id,
+            bos_token_id=self.llm_tokenizer('\n').input_ids[0],
+            eos_token_id=[self.llm_tokenizer.im_end_id,self.llm_tokenizer.im_start_id],
+        )
         if not chat:
             output_text = [
                 self.llm_tokenizer.decode(_[:].cpu(),skip_special_tokens=True).strip() for _ in outputs
@@ -530,11 +524,6 @@ class Minigpt4Qwen(Blip2Base):
         # proj config
         freeze_proj = cfg.get("freeze_proj",False)
 
-        # cast dtype
-        autocast_dtype = cfg.get("autocast_dtype","float16")
-        autocast_dict = {"float16":torch.float16,"bfloat16":torch.bfloat16}
-        autocast_dtype = autocast_dict[autocast_dtype]
-
         model = cls(
             vit_model=vit_model,
             img_size=img_size,
@@ -555,7 +544,6 @@ class Minigpt4Qwen(Blip2Base):
             freeze_qformer=freeze_qformer,
             freeze_queries=freeze_queries,
             freeze_proj=freeze_proj,
-            autocast_dtype=autocast_dtype,
         )
 
         model.load_checkpoint_from_config(cfg)

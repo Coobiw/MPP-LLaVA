@@ -12,6 +12,8 @@ import os
 import time
 from pathlib import Path
 
+from functools import partial
+
 import torch
 import torch.distributed as dist
 import webdataset as wds
@@ -32,10 +34,29 @@ from lavis.datasets.datasets.dataloader_utils import (
     PrefetchLoader,
 )
 from torch.nn.parallel import DistributedDataParallel as DDP
-from fairscale.nn.data_parallel import FullyShardedDataParallel as FSDP
 from torch.utils.data import DataLoader, DistributedSampler
 from torch.utils.data.dataset import ChainDataset
 
+from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
+from torch.distributed.fsdp.fully_sharded_data_parallel import (
+    CPUOffload,
+    BackwardPrefetch,  # 没用到，学习的torch官方FSDP的import
+)
+from torch.distributed.fsdp.wrap import (
+    size_based_auto_wrap_policy,  # 参数分块的策略，详见下面的注释
+    _module_wrap_policy,
+    enable_wrap,  # 没用到，学习的torch官方FSDP的import
+    wrap,  # 没用到，学习的torch官方FSDP的import
+)
+'''
+my_auto_wrap_policy = functools.partial(
+        size_based_auto_wrap_policy, min_num_params=100
+    )
+如果该层中的参数数量大于100，FSDP可以将该层包装或分片。
+如果该层中的参数数量小于100，它将由FSDP与其他小层包裹在一起。
+找到1个最佳的自动包装策略具有挑战性，Py Torch将在未来为该配置添加自动调整。
+如果没有自动调整工具，最好使用不同的自动包装策略实验性地剖析您的工作流程，并找到最佳策略。
+'''
 
 @registry.register_runner("runner_base")
 class RunnerBase:
@@ -77,7 +98,7 @@ class RunnerBase:
     @property
     def use_distributed(self):
         return self.config.run_cfg.distributed
-    
+
     @property
     def use_fsdp(self):
         if self.use_distributed:
@@ -91,25 +112,41 @@ class RunnerBase:
         A property to get the DDP-wrapped model on the device.
         """
         # move model to device
-        if self._model.device != self.device:
+        if self._model.device != self.device:  # 最开始在cpu，然后放到gpu上并进行ddp，fsdp
+            # 后面调用的时候就不会走这个if了
             self._model = self._model.to(self.device)
 
             # distributed training wrapper
             if self.use_distributed:
                 if self._wrapped_model is None:
                     if self.use_fsdp:
-                        assert False, "will support in the future"
-                        amp = self.config.run_cfg.get("amp", False)
-                        if amp:
-                            self._model = self._model.bfloat16()
-                            self._wrapped_model = FSDP(
-                                self._model, mixed_precision=True
+                        assert False, 'Not fully support FSDP, please wait for a while!'
+                        self._model = self._model.bfloat16()
+                        cpu_offload = self.config.run_cfg.get('cpu_offload',None)
+                        cpu_offload = CPUOffload(offload_params=True) if cpu_offload else None
+                        min_num_params = self.config.run_cfg.get('min_num_params',None)
+                        if min_num_params:
+                            my_auto_wrap_policy = partial(
+                                size_based_auto_wrap_policy,
+                                min_num_params=int(min_num_params),
                             )
                         else:
-                            self._model.to(torch.bfloat16)
-                            self._wrapped_model = FSDP(
-                                self._model
-                            )
+                            my_auto_wrap_policy = None
+                        self._wrapped_model = FSDP(
+                            self._model,
+                            cpu_offload=cpu_offload,
+                            auto_wrap_policy=my_auto_wrap_policy,
+                            device_id=self.config.run_cfg.gpu,
+                            use_orig_params=True,
+                            ignored_modules=[self._model.llm_proj],
+                            limit_all_gathers=True,  # 防止过多的显存占用：https://github.com/pytorch/pytorch/issues/91165#issuecomment-160080533
+                            # limit_all_gathers无法本质解决问题，对于大多数参数都不训练的情况：
+                            # 更本质的问题是，大量参数本身不需要梯度，而其激活值需要梯度
+                            # when a parameter corresponds to a module whose output activations require gradient 
+                            # but itself does not require gradient -- in that case, 
+                            # FSDP's pre-backward hook runs but its post-backward hook does not.
+                            # TODO： 尝试的解决方案，使用torch2.1
+                        )
                     else:
                         self._wrapped_model = DDP(
                             self._model, device_ids=[self.config.run_cfg.gpu]
@@ -130,27 +167,34 @@ class RunnerBase:
             num_parameters = 0
             for p_group in optim_params:
                 for p in p_group["params"]:
-                    num_parameters += p.data.nelement()    
+                    num_parameters += p.data.nelement()
             logging.info("number of trainable parameters: {}".format(num_parameters))      
-                  
+
             beta2 = self.config.run_cfg.get("beta2", 0.999)
 
             self._optimizer = torch.optim.AdamW(
                 optim_params,
                 lr=float(self.config.run_cfg.init_lr),
                 betas=(0.9, beta2),
-            )    
+            )
         return self._optimizer
 
     @property
     def scaler(self):
         amp = self.config.run_cfg.get("amp", False)
+        loss_scale = self.config.run_cfg.get("loss_scale",True)
 
         if amp:
             if self._scaler is None:
-                self._scaler = torch.cuda.amp.GradScaler()
+                self._scaler = torch.cuda.amp.GradScaler(enabled=loss_scale)
 
         return self._scaler
+
+    @property
+    def autocast_dtype(self):
+        ac_dt = self.config.run_cfg.get('autocast_dtype',"fp16")
+        assert ac_dt in ['bf16','fp16'], 'please set it in ["bf16","fp16"]'
+        return ac_dt
 
     @property
     def lr_scheduler(self):
@@ -472,6 +516,7 @@ class RunnerBase:
             log_freq=self.log_freq,
             accum_grad_iters=self.accum_grad_iters,
             grad_norm_clip=self.grad_norm_clip,
+            autocast_dtype = self.autocast_dtype,
         )
 
     @torch.no_grad()
@@ -511,7 +556,10 @@ class RunnerBase:
 
     def unwrap_dist_model(self, model):
         if self.use_distributed:
-            return model.module
+            if self.use_fsdp:
+                return model
+            else:
+                return model.module
         else:
             return model
 

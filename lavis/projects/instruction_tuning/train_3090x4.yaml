@@ -77,10 +77,10 @@ run:
   batch_size_train: 1 #16
   batch_size_eval: 1
   num_workers: 4
-  accum_grad_iters: 16 #1
+  accum_grad_iters: 32 #1
 
   seed: 42
-  output_dir: "output/instruction_tuning/lr1e-4"
+  output_dir: "output/instruction_tuning/lr1e-4_4x3090"
 
   amp: True
   autocast_dtype: "bf16" # ['bf16','fp16']

@@ -15,6 +15,7 @@ from lavis.common.logger import MetricLogger, SmoothedValue
 from lavis.common.registry import registry
 from lavis.datasets.data_utils import prepare_sample
 
+from torch.nn.utils import clip_grad_norm_
 
 class BaseTask:
     def __init__(self, **kwargs):
@@ -114,6 +115,7 @@ class BaseTask:
         log_freq=50,
         accum_grad_iters=1,
         grad_norm_clip=None,
+        autocast_dtype='fp16',
     ):
         return self._train_inner_loop(
             epoch=epoch,
@@ -127,34 +129,7 @@ class BaseTask:
             cuda_enabled=cuda_enabled,
             accum_grad_iters=accum_grad_iters,
             grad_norm_clip=grad_norm_clip,
-        )
-
-    def train_iters(
-        self,
-        epoch,
-        start_iters,
-        iters_per_inner_epoch,
-        model,
-        data_loader,
-        optimizer,
-        lr_scheduler,
-        scaler=None,
-        cuda_enabled=False,
-        log_freq=50,
-        accum_grad_iters=1,
-    ):
-        return self._train_inner_loop(
-            epoch=epoch,
-            start_iters=start_iters,
-            iters_per_epoch=iters_per_inner_epoch,
-            model=model,
-            data_loader=data_loader,
-            optimizer=optimizer,
-            scaler=scaler,
-            lr_scheduler=lr_scheduler,
-            log_freq=log_freq,
-            cuda_enabled=cuda_enabled,
-            accum_grad_iters=accum_grad_iters,
+            autocast_dtype=autocast_dtype,
         )
 
     def _train_inner_loop(
@@ -171,6 +146,7 @@ class BaseTask:
         cuda_enabled=False,
         accum_grad_iters=1,
         grad_norm_clip=None,
+        autocast_dtype='fp16',
     ):
         """
         An inner training loop compatible with both epoch-based and iter-based training.
@@ -221,7 +197,7 @@ class BaseTask:
 
             lr_scheduler.step(cur_epoch=inner_epoch, cur_step=i)
 
-            with torch.cuda.amp.autocast(enabled=use_amp):
+            with torch.cuda.amp.autocast(enabled=use_amp,dtype=torch.bfloat16 if autocast_dtype == 'bf16' else torch.float16):
                 loss, loss_dict = self.train_step(model=model, samples=samples)
                 loss /= accum_grad_iters # not affect loss_dict values for logging
             # if not (torch.isnan(loss) or torch.isinf(loss)):
@@ -237,15 +213,15 @@ class BaseTask:
 
             # update gradients every accum_grad_iters iterations
             if (i + 1) % accum_grad_iters == 0:
+                # TODO: grad_norm_clip的FSDP适配
                 if grad_norm_clip is not None:
-                    from torch.nn.utils import clip_grad_norm_
                     parameters_with_grads = [param for pg in optimizer.param_groups for param in pg['params']]
                     clip_grad_norm_(parameters_with_grads,max_norm=grad_norm_clip)
                     # print(f"grad:{grad_norm_clip}")
                 if use_amp:
                     scaler.step(optimizer)
-                    scaler.update()                     
-                else:    
+                    scaler.update()
+                else:
                     optimizer.step()
                 optimizer.zero_grad()
 
