@@ -1,0 +1,62 @@
+model:
+  arch: "resnet50_clip_cls"
+  input_resolution: 512
+  output_dim: 2 # 猫狗二分类
+  freeze_bn: true
+  head_scale: 10.
+  use_mlp_head: true
+  dropout_rate: 0.
+
+  # 一般测试，或者需要进一步load预训练模型的时候才采用
+  load_finetuned: false
+  finetuned: ""
+
+dataset:
+  train_cfg:
+    name: 'example_cls_dataset'
+    transform:
+      name: "image_train_processor"
+      cfg:
+        image_size: 512
+    data_root: "example_data/classification/train"
+  val_cfg:
+    name: 'example_cls_dataset'
+    transform:
+      name: "image_eval_processor"
+      cfg:
+        image_size: 512
+    data_root: "example_data/classification/val"
+
+run:
+  task: "classification"
+  resume_ckpt_path: null
+  # scheduler
+  lr_sched: "constant_lr"
+  lr_decay_rate: null # cosine的情况不需要，step_lr才需要
+  warmup_lr: -1 # 小于0代表则直接赋值为init_lr了，这样就跳过warmup，第一个epoch直接constant了
+  warmup_steps: 0 # warmup 的iterations数目
+  min_lr: 1e-5 # 衰减到的最小的lr
+  # optimizer
+  init_lr: 1e-5 # warmup结束的lr，不启动warmup就是最开始的lr
+  lr_layer_decay: 1
+  weight_decay: 0.
+  beta2: 0.999 # AdamW优化器的beta2参数
+
+  batch_size: 4 # 每个gpu上的bs
+  batch_size_val: 4
+  num_worker: 4 # 每个gpu上的workers数目
+  max_epoch: 10
+  log_freq: 1 # 多少个iteration进行print一次log
+  accum_grad_iters: 1 # 梯度累积
+  grad_norm_clip: null # 梯度裁剪
+
+  output_dir: "output/examples/classification"
+
+  evaluate: False # 如果开启，则只进行evaluate，不进行训练
+  eval_freq: 1 # 多少个epoch对模型进行一次evaluate
+  save_freq: 1 # 多少个epoch保存一次模型
+
+  amp: False # 混合精度
+  device: "cuda"
+  distributed: True
+  dist_url: "env://" # 代表ddp的参数采用环境变量里的值

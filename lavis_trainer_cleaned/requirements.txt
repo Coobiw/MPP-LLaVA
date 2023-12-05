@@ -1,0 +1,39 @@
+# 和minipt4qwen一致
+contexttimer
+decord
+diffusers<=0.16.0
+einops>=0.4.1
+fairscale==0.4.4
+ftfy
+iopath
+ipython
+omegaconf
+opencv-python-headless==4.5.5.64
+opendatasets
+packaging
+pandas
+plotly
+pre-commit
+pycocoevalcap
+pycocotools
+python-magic
+scikit-image
+sentencepiece
+spacy
+streamlit
+timm==0.4.12
+torch==2.0.1
+torchvision==0.15.2
+tqdm
+transformers>=4.33.0
+webdataset
+wheel
+accelerate
+peft
+tiktoken==0.5.1
+transformers_stream_generator
+
+# clip required
+regex
+# 安装clip 也可以去github下载解压 然后再cd clip && pip install -e .
+clip @ git+https://github.com/openai/CLIP.git

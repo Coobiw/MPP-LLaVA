@@ -1,0 +1,9 @@
+model:
+  arch: resnet50_clip
+  base_ckpt: ./ckpt/clip/openai/RN50.pt
+  input_resolution: 224
+  output_dim: null
+  freeze_bn: false
+  head_scale: null
+  use_mlp_head: false
+  dropout_rate: 0.

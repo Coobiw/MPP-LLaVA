@@ -1,0 +1,38 @@
+[
+    {
+        "image_path": "example_data/image2prompt/images/c78807b7-d55a-4a2d-a6b6-9192b18941ad.png",
+        "prompt": "a portrait of a female robot made from a cloud of images being very grateful to the creator, very intricate details, futuristic steampunk, octane render, 8 k, trending on artstation "
+    },
+    {
+        "image_path": "example_data/image2prompt/images/601d9792-eccd-4850-97a7-edbe91d3464c.png",
+        "prompt": "a dog doing weights. epic oil painting. "
+    },
+    {
+        "image_path": "example_data/image2prompt/images/3c586acb-14dc-43df-8900-954c336f01b3.png",
+        "prompt": "a dog doing weights on fire. epic oil painting. "
+    },
+    {
+        "image_path": "example_data/image2prompt/images/6722011e-92e6-4523-b05e-52c5785c364a.png",
+        "prompt": "an emo portrait painting. short dark brown messy pixie haircut, large black eyes, antichrist eyes, slightly rounded face, pointed chin, thin lips, small nose, black tank top, black leather jacket, black knee - length skirt, black choker, gold earring, by peter mohrbacher, by rebecca guay, by ron spencer "
+    },
+    {
+        "image_path": "example_data/image2prompt/images/5faea736-7c0c-4a97-8587-45199e0e8736.png",
+        "prompt": "an emo portrait painting. short dark brown messy pixie haircut, large black eyes, antichrist eyes, slightly rounded face, pointed chin, thin lips, small nose, black tank top, black leather jacket, black knee - length skirt, black choker, neon, pastel colors. "
+    },
+    {
+        "image_path": "example_data/image2prompt/images/9341f9ea-8205-4916-8660-a3356b6c578c.png",
+        "prompt": "a painting by edward hopper of a group of men that are wearing spacesuits and the composition of the spacecraft is that of a planet. "
+    },
+    {
+        "image_path": "example_data/image2prompt/images/e37dbf7e-bbc6-4025-9be3-d2d678b51458.png",
+        "prompt": "a painting by edward hopper of a glowing human figure at a glowing cross. the light of the figure is so bright that it almost seems to be seeing into the future. "
+    },
+    {
+        "image_path": "example_data/image2prompt/images/b38ae770-d710-4282-b32f-0d1c95087942.png",
+        "prompt": "a painting by edward hopper of someone on a motorcycle, an urban scene, and a man with sunglasses. "
+    },
+    {
+        "image_path": "example_data/image2prompt/images/56a693fc-cacb-4727-92e3-30a932f26ffa.png",
+        "prompt": "a painting by edward hopper of scenes from the mad max movie universe. "
+    }
+]
