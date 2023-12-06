@@ -82,6 +82,8 @@ run:
   seed: 42
   output_dir: "output/instruction_tuning/lr1e-4"
 
+  log_freq: 64
+
   amp: True
   autocast_dtype: "bf16" # ['bf16','fp16']
   loss_scale: False # 默认为True，如果autocast_dtype为float16，请设置为True，为bfloat16，建议设置为False
