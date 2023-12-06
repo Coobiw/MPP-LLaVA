@@ -14,6 +14,7 @@
     - [运行train.py](#运行trainpy)
   - [Minigpt4Qwen对话示例](#minigpt4qwen对话示例)
   - [Acknowledgement](#acknowledgement)
+  - [FAQ](#faq)
   - [License](#license)
 
 # Minigpt4Qwen
@@ -213,6 +214,16 @@ CUDA_VISIBLE_DEVICES=xxx python -m torch.distributed.run --nproc_per_node=8 trai
 - [QwenLM](https://github.com/QwenLM/Qwen) 本仓库的语言模型采用Qwen-7B-Chat
 - [MiniGPT4](https://github.com/Vision-CAIR/MiniGPT-4) 本仓库的主要思想来自MiniGPT4
 - [MMPretrain](https://github.com/open-mmlab/mmpretrain) 提供所需的双语指令微调数据集
+
+## FAQ
+
+### 复现时比checkpoint中的log的loss大一个数量级的问题
+
+对应issue：https://github.com/Coobiw/MiniGPT4Qwen/issues/5
+
+在https://github.com/Coobiw/MiniGPT4Qwen/commit/4ad76d15c79cec9b08e8f0f0da69732d0924a9db这个commit中，我修改了log时loss显示的问题。
+
+简单来说就是我放出来的log里的loss是除过梯度积累的iteration数的（就是`accum_grad_iters`，在yaml文件里是设置成16或者32），所以你看到的会差一个数量级，如果你使用的是这个commit之后的代码跑出这个结果是正常的
 
 ## License
 
