@@ -221,7 +221,7 @@ CUDA_VISIBLE_DEVICES=xxx python -m torch.distributed.run --nproc_per_node=8 trai
 
 对应issue：https://github.com/Coobiw/MiniGPT4Qwen/issues/5
 
-在https://github.com/Coobiw/MiniGPT4Qwen/commit/4ad76d15c79cec9b08e8f0f0da69732d0924a9db这个commit中，我修改了log时loss显示的问题。
+在https://github.com/Coobiw/MiniGPT4Qwen/commit/4ad76d15c79cec9b08e8f0f0da69732d0924a9db 这个commit中，我修改了log时loss显示的问题。
 
 简单来说就是我放出来的log里的loss是除过梯度积累的iteration数的（就是`accum_grad_iters`，在yaml文件里是设置成16或者32），所以你看到的会差一个数量级，如果你使用的是这个commit之后的代码跑出这个结果是正常的
 
