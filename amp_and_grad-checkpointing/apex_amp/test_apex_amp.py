@@ -10,7 +10,7 @@ import os
 from eva_vit import create_eva_vit_g
 
 # 定义训练函数
-def train(opt_level, epochs=1):
+def train(opt_level, epochs=10):
     torch.cuda.reset_peak_memory_stats()
 
     # 定义模型、优化器

@@ -1,6 +1,11 @@
 # 混合精度技术与gradient checkpointing技术
 
+## 博客
+
+[知乎](https://zhuanlan.zhihu.com/p/671165275?)
+
 ## apex库的安装
+
 在使用minigpt4qwen的python环境基础上
 
 下载[apex-23.05版本](https://github.com/NVIDIA/apex/archive/refs/tags/23.05.zip)

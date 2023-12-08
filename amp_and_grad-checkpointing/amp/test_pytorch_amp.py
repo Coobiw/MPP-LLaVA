@@ -10,7 +10,7 @@ import os
 from eva_vit import create_eva_vit_g
 
 # 定义训练函数
-def train(epochs=1):
+def train(epochs=10):
     torch.cuda.reset_peak_memory_stats()
 
     # 定义模型、优化器
@@ -25,7 +25,7 @@ def train(epochs=1):
         inputs = torch.randn(16,3,224,224).cuda()
         with autocast():
             outputs = model(inputs)
-        loss = outputs.sum()
+            loss = outputs.sum()
         scaler.scale(loss).backward()
         scaler.step(optimizer)
         scaler.update()
