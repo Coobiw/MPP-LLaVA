@@ -23,6 +23,7 @@
 
 - 干净、灵活的Trainer：https://github.com/Coobiw/MiniGPT4Qwen/tree/master/lavis_trainer_cleaned
 - grad-checkpoint + amp tutorails：https://github.com/Coobiw/MiniGPT4Qwen/tree/master/amp_and_grad-checkpointing
+- deepspeed tutorials：https://github.com/Coobiw/MiniGPT4Qwen/tree/master/deepspeed_tutorials
 
 ## Introduction
 
@@ -38,6 +39,7 @@
 
 ## TODO LIST
 
+- [ ] 支持MME测评
 - [ ] 支持deepspeed
 - [ ] 支持pytorch原生FSDP
 - [x] 开放gradio WebUI demo
