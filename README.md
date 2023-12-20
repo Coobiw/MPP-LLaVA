@@ -47,7 +47,7 @@
 
 ## TODO LIST
 
-- [ ] 支持MME测评
+- [ ] 支持MME Benchmark的测评
 - [x] 支持deepspeed
 - [ ] 支持pytorch原生FSDP（可能搁置，因为实现了deepspeed，而且fsdp个人认为不怎么好用）
 - [x] 开放gradio WebUI demo
@@ -258,6 +258,8 @@ python deepspeed2pth.py --ckpt_dir lavis/output/deepspeed/lr1e-4_4x3090/20231220
 - [QwenLM](https://github.com/QwenLM/Qwen) 本仓库的语言模型采用Qwen-7B-Chat
 - [MiniGPT4](https://github.com/Vision-CAIR/MiniGPT-4) 本仓库的主要思想来自MiniGPT4
 - [MMPretrain](https://github.com/open-mmlab/mmpretrain) 提供所需的双语指令微调数据集
+- [DeepSpeed](https://github.com/microsoft/DeepSpeed) 👍
+- [DeepSpeedExamples](https://github.com/microsoft/DeepSpeedExamples) 👍👍
 
 ## FAQ
 
