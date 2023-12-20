@@ -1,6 +1,6 @@
 # 关于DeepSpeed的尝试
 
-博客地址： 待更新
+知乎博客地址： https://zhuanlan.zhihu.com/p/673359684
 
 
 

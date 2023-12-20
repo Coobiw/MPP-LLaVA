@@ -24,6 +24,8 @@
 
 已经支持DeepSpeed！
 
+![](./assets/maimai.png)
+
 ## 附属项目
 
 - 干净、灵活的Trainer：https://github.com/Coobiw/MiniGPT4Qwen/tree/master/lavis_trainer_cleaned
