@@ -8,6 +8,8 @@ import os
 import argparse
 
 import deepspeed
+from deepspeed.utils.zero_to_fp32 import convert_zero_checkpoint_to_fp32_state_dict
+
 from torch.utils.data import Dataset
 
 from eva_vit import create_eva_vit_g
@@ -32,7 +34,7 @@ def load_ckpt(model_engine, scheduler, ckpt_dir, ckpt_tag):
 class ExampleDataset(Dataset):
     def __init__(self):
         super().__init__()
-        self.data = [torch.randn(3,224,224) for _ in range(400)]
+        self.data = [torch.randn(3,224,224,device="cpu") for _ in range(400)]
 
     def __len__(self):
         return len(self.data)
@@ -45,16 +47,12 @@ if __name__ == "__main__":
 
     save_interval = 1
     save_dir = './ckpt_zero3_value-2e8'
+    # save_dir = './ckpt_zero2'
 
     # ckpt_dir = './ckpt_zero2'
     ckpt_dir = None
     ckpt_tag = None
 
-    deepspeed.init_distributed(
-        dist_backend='nccl',
-        init_method='env://',
-        distributed_port=8080,
-    )
 
     parser = argparse.ArgumentParser(description='Args')
     parser.add_argument('--deepspeed_config', default=None, type=str)
@@ -62,9 +60,17 @@ if __name__ == "__main__":
 
     args, _unknown = parser.parse_known_args()
 
+    deepspeed.init_distributed(
+        dist_backend='nccl',
+        init_method='env://',
+        distributed_port=8080,
+    )
+
     if args.deepspeed_config is not None and args.local_rank == -1:
         print('use environment local_rank')
         args.local_rank = int(os.environ.get('LOCAL_RANK', -1))
+
+    torch.cuda.set_device(args.local_rank)
 
     # deepspeed.utils.dist.barrier()
     dist.barrier()
@@ -77,7 +83,8 @@ if __name__ == "__main__":
 
     print(f"Local rank: {args.local_rank}")
 
-    model = create_eva_vit_g(img_size=224,drop_path_rate=0.,use_checkpoint=False,precision="fp32").cuda(args.local_rank)
+
+    model = create_eva_vit_g(img_size=224,drop_path_rate=0.,use_checkpoint=False,precision="fp32").cuda()
     trainset = ExampleDataset()
 
     # optimizer = optim.AdamW(model.parameters(),lr=1e-4,eps=1e-7,weight_decay=0.)
@@ -119,16 +126,14 @@ if __name__ == "__main__":
     for epoch in range(start_epoch+1,10):
         start_time = time.time()
         for global_step, batch in tqdm(enumerate(trainloader,start=start_global_step+1)):
-            batch = batch.to(model_engine.device)
+            batch = batch.cuda()
             batch = batch.to(next(model_engine.parameters()).dtype) # data的dtype可能和模型不对应，比如开了bf16
-
-            # print(f'local_rank: {args.local_rank}',batch.shape)
-            # print(f'local_rank: {args.local_rank}',batch[:,0,:10,:10])
 
             outputs = model_engine(batch)
             loss = outputs.mean()
 
             # loss = model_engine.train_step(batch)
+
             model_engine.backward(loss)
             model_engine.step()
 
@@ -140,7 +145,8 @@ if __name__ == "__main__":
             client_sd['epoch'] = epoch
             client_sd['scheduler'] = scheduler.state_dict()
             ckpt_id = loss.item()
-            model_engine.save_checkpoint(save_dir=save_dir,tag=f'epoch_{epoch}',client_state = client_sd)
+            with torch.no_grad():
+                model_engine.save_checkpoint(save_dir=save_dir,tag=f'epoch_{epoch}',client_state = client_sd)
 
         if args.local_rank == 0:
             end_time = time.time()
