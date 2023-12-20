@@ -6,6 +6,8 @@ import logging
 import string
 from packaging import version
 
+import contextlib
+
 import torch
 # torch.autograd.set_detect_anomaly(True) # for debug
 from torch.cuda.amp import autocast as autocast
@@ -72,6 +74,7 @@ class Minigpt4Qwen(Blip2Base):
         freeze_qformer=False,
         freeze_queries=False,
         freeze_proj=False,
+        enable_autocast=True,
     ):
         super().__init__()
         transformers_version = version.parse(transformers.__version__)
@@ -182,10 +185,14 @@ class Minigpt4Qwen(Blip2Base):
             )
             self.llm_model = get_peft_model(self.llm_model,peft_config)
             self.llm_model.print_trainable_parameters()
+        
+        # enable autocast
+        self.enable_autocast = enable_autocast
 
     def encode_image(self, image):
-        with self.maybe_autocast():
-            image_embeds = self.ln_vision(self.visual_encoder(image))
+        with (self.maybe_autocast() if self.enable_autocast else contextlib.nullcontext()):
+            image_embeds = self.visual_encoder(image)
+            image_embeds = self.ln_vision(image_embeds)
         image_atts = torch.ones(image_embeds.size()[:-1], dtype=torch.long).to(image_embeds.device)
 
         bs = image.size(0)
@@ -523,6 +530,9 @@ class Minigpt4Qwen(Blip2Base):
 
         # proj config
         freeze_proj = cfg.get("freeze_proj",False)
+        
+        # autocast config
+        enable_autocast = cfg.get("enable_autocast",True)
 
         model = cls(
             vit_model=vit_model,
@@ -544,6 +554,7 @@ class Minigpt4Qwen(Blip2Base):
             freeze_qformer=freeze_qformer,
             freeze_queries=freeze_queries,
             freeze_proj=freeze_proj,
+            enable_autocast = enable_autocast,
         )
 
         model.load_checkpoint_from_config(cfg)

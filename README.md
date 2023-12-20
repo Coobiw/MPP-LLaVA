@@ -12,6 +12,9 @@
     - [数据准备](#数据准备)
     - [config文件的书写](#config文件的书写)
     - [运行train.py](#运行trainpy)
+  - [DeepSpeed](#deepspeed) 
+    - [DeepSpeed训练](#deepspeed训练)
+    - [DeepSpeed推理](#deepspeed推理)
   - [Minigpt4Qwen对话示例](#minigpt4qwen对话示例)
   - [Acknowledgement](#acknowledgement)
   - [FAQ](#faq)
@@ -19,11 +22,14 @@
 
 # Minigpt4Qwen
 
+已经支持DeepSpeed！
+
 ## 附属项目
 
 - 干净、灵活的Trainer：https://github.com/Coobiw/MiniGPT4Qwen/tree/master/lavis_trainer_cleaned
 - grad-checkpoint + amp tutorails：https://github.com/Coobiw/MiniGPT4Qwen/tree/master/amp_and_grad-checkpointing
 - deepspeed tutorials：https://github.com/Coobiw/MiniGPT4Qwen/tree/master/deepspeed_tutorials
+- 现在已经支持deepspeed的训练（使用deepspeed runner）
 
 ## Introduction
 
@@ -35,13 +41,13 @@
 
 ## 所需计算资源
 
-本项目使用了8张 `3090 24G`，进行训练，单卡推理。**实际上，单张24G的3090也能够满足训练的计算需求，但需要调大梯度积累。**
+本项目使用了4张/8张 `3090 24G`，进行训练，单卡推理。**实际上，单张24G的3090也能够满足训练的计算需求，但需要调大梯度积累。**
 
 ## TODO LIST
 
 - [ ] 支持MME测评
-- [ ] 支持deepspeed
-- [ ] 支持pytorch原生FSDP
+- [x] 支持deepspeed
+- [ ] 支持pytorch原生FSDP（可能搁置，因为实现了deepspeed，而且fsdp个人认为不怎么好用）
 - [x] 开放gradio WebUI demo
 - [X] 开放所用数据集和checkpoint
 - [X] 开放源代码
@@ -188,6 +194,39 @@ CUDA_VISIBLE_DEVICES=xxx python train.py --cfg-path lavis/projects/instruction_t
 ```bash
 CUDA_VISIBLE_DEVICES=xxx python -m torch.distributed.run --nproc_per_node=8 train.py --cfg-path lavis/projects/instruction_tuning/train.yaml
 ```
+
+
+
+## DeepSpeed
+
+本项目支持了ZERO-{0,1,2,3}的训练、ZERO-{0,1,2}的checkpoint转换、以及ZERO-{0,1,2}的推理（chat和gradio）
+
+### DeepSpeed训练
+
+config文件请参考：[train_zero0_3090x4.yaml](https://github.com/Coobiw/MiniGPT4Qwen/blob/master/lavis/projects/deepspeed/train_zero0_3090x4.yaml)
+
+**运行命令**
+
+```bash
+CUDA_VISIBLE_DEVICES=0,1,2,3 python -m torch.distributed.run --nproc_per_node=4 train.py --cfg-path lavis/projects/deepspeed/train_zero0_3090x4.yaml --use-deepspeed
+```
+
+
+
+### DeepSpeed推理
+
+上述训练过程会调用deepspeed的`save_checkpoint`方法，得到类似下图的目录：
+![image-20231220202535777](./assets/image-20231220202535777.png)
+
+可以运行以下命令得到模型的`.pth`文件：
+
+```bash
+python deepspeed2pth.py --ckpt_dir lavis/output/deepspeed/lr1e-4_4x3090/20231220150/deepspeed_ckpt/epoch_9
+```
+
+之后会在该目录中生成一个`model.pth`文件
+
+接着就可以用该`.pth`文件去使用`cli_demo.py`或`webui_demo.py`进行聊天啦～
 
 ## Minigpt4Qwen对话示例
 

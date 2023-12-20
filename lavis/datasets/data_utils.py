@@ -72,6 +72,14 @@ def move_to_cuda(sample):
 
     return apply_to_sample(_move_to_cuda, sample)
 
+def convert_to_dtype(sample,dtype):
+    def _convert_to_dtype(tensor):
+        return tensor.to(dtype)
+    return apply_to_sample(_convert_to_dtype, sample)
+
+def prepare_sample_deepspeed(samples):
+    samples = move_to_cuda(samples)
+    return samples
 
 def prepare_sample(samples, cuda_enabled=True):
     if cuda_enabled:

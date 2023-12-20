@@ -1,0 +1,134 @@
+model:
+  arch: minigpt4qwen
+  model_type: qwen7b_chat
+  load_finetuned: False
+  load_pretrained: True
+
+  # pretrained: "https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/InstructBLIP/blip2_pretrained_flant5xxl.pth"
+  pretrained: "ckpt/blip2/blip2_pretrained_flant5xxl.pth"
+  finetuned: ""
+
+  # vit encoder
+  vit_model: "eva_clip_g"
+  image_size: 224
+  drop_path_rate: 0
+  use_grad_checkpoint: True
+  vit_precision: "fp16"  # 如果你要打开vit进行训练，这里需要调整成fp32,否则如果开启amp混合精度训练会有问题（在scaler处报错,因为没有实现一个fp16的AdamW）
+  freeze_vit: True
+  unfreeze_pos_embed: False
+
+  # Q-Former
+  num_query_token: 32
+  qformer_text_input: False
+  freeze_qformer: True
+  freeze_queries: True
+
+  # projection
+  freeze_proj: False
+
+  # path to Vicuna checkpoint
+  llm_model: "ckpt/Qwen7B-chat"
+
+  # lora config
+  get_lora: False
+  lora_alpha: 32
+  lora_r: 8
+  lora_dropout: 0.05
+
+  # text length when training
+  max_txt_len: 256
+
+  # enable autocast of vit
+  enable_autocast: False
+
+datasets:
+  minigpt4_instruction: # name of the dataset builder
+    vis_processor:
+        train:
+          name: "blip2_image_train"
+          image_size: 224
+    text_processor:
+        train:
+          name: "base_instruction"
+          max_words: 100
+  llava_instruction: # name of the dataset builder
+    vis_processor:
+        train:
+          name: "blip2_image_train"
+          image_size: 224
+    text_processor:
+        train:
+          name: "base_instruction"
+          max_words: 100
+
+run:
+  runner: deepspeed_runner
+  task: deepspeed_image_text_pretrain
+  # optimizer
+  lr_sched: "linear_warmup_cosine_lr"
+  init_lr: 1e-4
+  min_lr: 1e-6
+  warmup_lr: 0
+  warmup_steps: 500
+  max_epoch: 10
+  batch_size_train: 2
+  batch_size_eval: 1
+  num_workers: 4
+
+  seed: 42
+  output_dir: "output/deepspeed/lr1e-4_4x3090_zero1"
+
+  log_freq: 32
+
+  resume_ckpt_load_dir: null
+  resume_ckpt_tag: null
+
+  evaluate: False
+  train_splits: ["train"]
+  # valid_splits: ["val"]
+  # test_splits: ["test"]
+
+  world_size: 1
+  dist_url: "env://"
+  distributed: True
+
+  deepspeed_config:
+    gradient_accumulation_steps: 16
+    train_micro_batch_size_per_gpu: 2
+
+    gradient_clipping: 1.
+    steps_per_print: 128
+    wall_clock_breakdown: False
+    dump_state: False
+
+    fp16:
+        enabled: False
+        loss_scale: 0
+        loss_scale_window: 1000
+        initial_scale_power: 16
+        hysteresis: 2
+        min_loss_scale: 1
+
+    bf16:
+        enabled: True
+
+    optimizer:
+        type: "AdamW"
+        params:
+            lr: 1e-4
+            betas: [0.9,0.99]
+            eps: 1e-7
+            weight_decay: 0.05
+
+    zero_optimization:
+        stage: 1
+        offload_optimizer:
+          device: "cpu"
+          pin_memory: True
+        allgather_partitions: True
+        allgather_bucket_size: 2e8
+        overlap_comm: True
+        reduce_scatter: True
+        reduce_bucket_size: 2e8
+        contiguous_gradients: True
+

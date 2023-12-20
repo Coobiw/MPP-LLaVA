@@ -6,5 +6,6 @@
 """
 
 from lavis.runners.runner_base import RunnerBase
+from lavis.runners.deepspeed_runner import DeepSpeedRunner
 
-__all__ = ["RunnerBase"]
+__all__ = ["RunnerBase","DeepSpeedRunner"]

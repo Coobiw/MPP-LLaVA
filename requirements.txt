@@ -31,3 +31,6 @@ accelerate
 peft
 tiktoken==0.5.1
 transformers_stream_generator
+
+# deepspeed
+deepspeed
