@@ -22,6 +22,8 @@
 
 # Minigpt4Qwen
 
+知乎博客：https://zhuanlan.zhihu.com/p/664612306
+
 已经支持DeepSpeed！
 
 ![](./assets/maimai.png)
@@ -29,8 +31,14 @@
 ## 附属项目
 
 - 干净、灵活的Trainer：https://github.com/Coobiw/MiniGPT4Qwen/tree/master/lavis_trainer_cleaned
+    - 知乎：https://zhuanlan.zhihu.com/p/670572461
+
 - grad-checkpoint + amp tutorails：https://github.com/Coobiw/MiniGPT4Qwen/tree/master/amp_and_grad-checkpointing
+    - 知乎：https://zhuanlan.zhihu.com/p/671165275?
+
 - deepspeed tutorials：https://github.com/Coobiw/MiniGPT4Qwen/tree/master/deepspeed_tutorials
+    - 知乎：https://zhuanlan.zhihu.com/p/673359684
+
 - 现在已经支持deepspeed的训练（使用deepspeed runner）
 
 ## Introduction

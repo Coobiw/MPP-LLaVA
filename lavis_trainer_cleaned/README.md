@@ -1,5 +1,7 @@
 # 基于Lavis实现的干净、灵活的Trainer
 
+知乎：https://zhuanlan.zhihu.com/p/670572461
+
 ## Introduction
 
 该项目主要是重构lavis之后搭建的，lavis（https://github.com/salesforce/LAVIS ）是多模态领域很火的一个开源仓库，像BLIP2、InstructBLIP、MiniGPT4等许多多模态大模型都是基于lavis进行进一步开发的。在仔细阅读其源码后，我非常喜欢它的代码框架，所以我针对其Trainer进行重构，**可以更加灵活地适配或迁移到用户的任务、模型、数据集。**
