@@ -1,3 +1,4 @@
+
 - [Minigpt4Qwen](#minigpt4qwen)
   - [附属项目](#附属项目)
   - [Introduction](#introduction)
@@ -19,6 +20,8 @@
   - [Acknowledgement](#acknowledgement)
   - [FAQ](#faq)
   - [License](#license)
+
+（似乎被爱可可老师转发了🥹，感谢大家关注！后续有空会加入更强LLM（先试试14B吧）和更多的数据，具体会根据后续的资源来看
 
 # Minigpt4Qwen
 
@@ -55,6 +58,7 @@
 
 ## TODO LIST
 
+- [ ] 支持Qwen-14B-Chat的训练
 - [ ] 支持MME Benchmark的测评
 - [x] 支持deepspeed
 - [ ] 支持pytorch原生FSDP（可能搁置，因为实现了deepspeed，而且fsdp个人认为不怎么好用）
