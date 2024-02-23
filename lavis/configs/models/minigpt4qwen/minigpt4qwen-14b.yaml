@@ -1,0 +1,60 @@
+ # Copyright (c) 2022, salesforce.com, inc.
+ # All rights reserved.
+ # SPDX-License-Identifier: BSD-3-Clause
+ # For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/BSD-3-Clause
+
+model:
+  arch: minigpt4_qwen7b-chat
+  load_finetuned: False
+  load_pretrained: True
+
+  # pretrained: "https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/InstructBLIP/blip2_pretrained_flant5xxl.pth"
+  pretrained: "ckpt/blip2/blip2_pretrained_flant5xxl.pth"
+  finetuned: ""
+
+  # vit encoder
+  vit_model: "eva_clip_g"
+  image_size: 224
+  drop_path_rate: 0
+  use_grad_checkpoint: False
+  vit_precision: "fp16"
+  freeze_vit: True
+  unfreeze_pos_embed: False
+
+  # Q-Former
+  num_query_token: 32
+  qformer_text_input: False
+  freeze_qformer: True
+  freeze_queries: True
+
+  # projection
+  freeze_proj: False
+
+  # path to Vicuna checkpoint
+  llm_model: "ckpt/Qwen-14B-Chat"
+
+  # lora config
+  get_lora: False
+  lora_alpha: 32
+  lora_r: 8
+  lora_dropout: 0.05
+
+  # text length when training
+  max_txt_len: 512
+
+
+preprocess:
+    vis_processor:
+        train:
+          name: "blip2_image_train"
+          image_size: 224
+        eval:
+          name: "blip_image_eval"
+          image_size: 224
+    text_processor:
+        train:
+          name: "blip_caption"
+          max_words: 100
+        eval:
+          name: "blip_caption"
+          max_words: 100

@@ -51,6 +51,7 @@ class Minigpt4Qwen(Blip2Base):
 
     PRETRAINED_MODEL_CONFIG_DICT = {
         "qwen7b_chat": "configs/models/minigpt4qwen/minigpt4qwen.yaml",
+        "qwen14b_chat": "configs/models/minigpt4qwen/minigpt4qwen-14b.yaml",
     }
 
     def __init__(
@@ -142,8 +143,10 @@ class Minigpt4Qwen(Blip2Base):
             config=llm_config,
             cache_dir=registry.get_path("cache_root"),
             trust_remote_code=True,
-            device_map='cuda',
+            # device_map='cuda',
+            device_map='cpu',
         )
+        # self.llm_model.transformer.gradient_checkpointing = True # 打开llm的gradient checkpointing
 
         self.llm_tokenizer.pad_token_id = self.llm_tokenizer.eod_id
         self.replace_image_token_id = self.llm_tokenizer("<|extra_0|>").input_ids[0]

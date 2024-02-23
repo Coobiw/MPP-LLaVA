@@ -81,7 +81,7 @@ class DeepSpeedRunner:
             # deepspeed training wrapper
             self._wrapped_model,_,_,_ = deepspeed.initialize(
                 model=self._model,
-                model_parameters=self._model.parameters(),
+                model_parameters=[p for p in self._model.parameters() if p.requires_grad],
                 config=OmegaConf.to_container(self.deepspeed_config),
             )
 

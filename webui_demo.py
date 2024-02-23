@@ -26,12 +26,15 @@ def disable_torch_init():
     setattr(torch.nn.LayerNorm, "reset_parameters", lambda self: None)
 
 def _load_model_processor(args):
-    device_map = 'cuda:{}'.format(args.gpu_id)
+    if args.cpu_only:
+        device_map = "cpu"
+    else:
+        device_map = 'cuda:{}'.format(args.gpu_id)
     
     global load_model_and_preprocess
     load_model_and_preprocess = partial(load_model_and_preprocess,is_eval=True,device=device_map)
 
-    model, vis_processors, _ = load_model_and_preprocess("minigpt4qwen", "qwen7b_chat")
+    model, vis_processors, _ = load_model_and_preprocess("minigpt4qwen", args.model_type)
     model.load_checkpoint(args.checkpoint_path)
 
     generation_config = {
@@ -47,9 +50,11 @@ def _load_model_processor(args):
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Demo")
+    parser.add_argument("--model-type",type=str,default='qwen7b_chat',choices=['qwen7b_chat','qwen14b_chat'])
     parser.add_argument("-c", "--checkpoint-path", type=str,
                         help="Checkpoint name or path, default to %(default)r")
     parser.add_argument("-s", "--seed", type=int, default=42, help="Random seed")
+    parser.add_argument("--cpu-only", action="store_true", help="Run demo with CPU only")
     parser.add_argument("--gpu_id", type=int, default=0, help="specify the gpu to load the model.")
     args = parser.parse_args()
     return args
@@ -61,7 +66,7 @@ def parse_args():
 print('Initializing Chat')
 args = parse_args()
 
-if torch.cuda.is_available():
+if torch.cuda.is_available() and not args.cpu_only:
     device='cuda:{}'.format(args.gpu_id)
 else:
     device=torch.device('cpu')

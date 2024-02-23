@@ -1,5 +1,6 @@
 
 - [Minigpt4Qwen](#minigpt4qwen)
+- [](#)
   - [附属项目](#附属项目)
   - [Introduction](#introduction)
   - [所需计算资源](#所需计算资源)
@@ -13,23 +14,34 @@
     - [数据准备](#数据准备)
     - [config文件的书写](#config文件的书写)
     - [运行train.py](#运行trainpy)
-  - [DeepSpeed](#deepspeed) 
+  - [DeepSpeed](#deepspeed)
     - [DeepSpeed训练](#deepspeed训练)
     - [DeepSpeed推理](#deepspeed推理)
+  - [MiniGPT4Qwen-14B的训练](#minigpt4qwen-14b的训练)
+    - [2张3090 24GB + DeepSpeed流水线并行](#2张3090-24gb--deepspeed流水线并行)
+  - [MiniGPT4Qwen-14B的推理](#minigpt4qwen-14b的推理)
+    - [权重转换](#权重转换)
+    - [CPU推理](#cpu推理)
   - [Minigpt4Qwen对话示例](#minigpt4qwen对话示例)
+    - [命令行demo(cli\_demo)](#命令行democli_demo)
+    - [webui demo](#webui-demo)
   - [Acknowledgement](#acknowledgement)
   - [FAQ](#faq)
+    - [复现时比checkpoint中的log的loss大一个数量级的问题](#复现时比checkpoint中的log的loss大一个数量级的问题)
   - [License](#license)
 
-（似乎被爱可可老师转发了🥹，感谢大家关注！后续有空会加入更强LLM（先试试14B吧）和更多的数据，具体会根据后续的资源来看
+（似乎被爱可可老师转发了🥹，感谢大家关注！后续有空会加入更强LLM（先试试Qwen-14B吧）和更多的数据，具体会根据后续的资源来看
+
 
 # Minigpt4Qwen
 
 知乎博客：https://zhuanlan.zhihu.com/p/664612306
 
-已经支持DeepSpeed！
+**已经支持Qwen-14B模型在2张RTX3090 24GB上的deepspeed流水线并行训练！**
 
 ![](./assets/maimai.png)
+========
+![](./assets/image-20240223030335224.png)
 
 ## 附属项目
 
@@ -42,7 +54,8 @@
 - deepspeed tutorials：https://github.com/Coobiw/MiniGPT4Qwen/tree/master/deepspeed_tutorials
     - 知乎：https://zhuanlan.zhihu.com/p/673359684
 
-- 现在已经支持deepspeed的训练（使用deepspeed runner）
+- 支持deepspeed的训练（使用deepspeed runner）
+- 支持Qwen-14B模型在2张RTX3090 24GB上的deepspeed流水线并行训练
 
 ## Introduction
 
@@ -58,10 +71,10 @@
 
 ## TODO LIST
 
-- [ ] 支持Qwen-14B-Chat的训练
+- [x] 支持deepspeed的流水线并行
+- [x] 支持Qwen-14B-Chat的训练
 - [ ] 支持MME Benchmark的测评
 - [x] 支持deepspeed
-- [ ] 支持pytorch原生FSDP（可能搁置，因为实现了deepspeed，而且fsdp个人认为不怎么好用）
 - [x] 开放gradio WebUI demo
 - [X] 开放所用数据集和checkpoint
 - [X] 开放源代码
@@ -111,9 +124,10 @@ wget https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/BL
 wget https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/BLIP2/blip2_pretrained_flant5xxl.pth
 ```
 
-2.下载Qwen7B-chat的权重
+2.下载Qwen-7B-chat/Qwen-14B-Chat的权重
 
 [Qwen-7B-chat huggingface](https://huggingface.co/Qwen/Qwen-7B-Chat)
+[Qwen-14B-chat huggingface](https://huggingface.co/Qwen/Qwen-14B-Chat)
 
 3.下载本模型的checkpoint(建议放入 `lavis/output/`)
 
@@ -241,6 +255,42 @@ python deepspeed2pth.py --ckpt_dir lavis/output/deepspeed/lr1e-4_4x3090/20231220
 之后会在该目录中生成一个`model.pth`文件
 
 接着就可以用该`.pth`文件去使用`cli_demo.py`或`webui_demo.py`进行聊天啦～
+
+## MiniGPT4Qwen-14B的训练
+本项目使用3090显卡，每张24GB的显存，14GB的模型，不计算其他任何开销，在16bits（fp16/bf16）的情况下，也至少需要14 $\times$ 2 = 28 GB的显存，并不能符合现有的硬件条件
+
+**方案：流水线并行（模型按layer粒度进行划分，一些layer在GPU0，一些layer在GPU1，是串行进行计算的，也是一种模型并行的方案）**
+
+### 2张3090 24GB + DeepSpeed流水线并行
+p.s.：如今暂时只支持并行在2张显卡上
+
+训练命令：
+```
+# num_stages代表并行的卡数，如今只支持2
+python -m torch.distributed.run --nproc_per_node=2 train_pipeline.py --cfg-path lavis/projects/pp_qwen14b/train_pp.yaml --num-stages 2
+```
+
+## MiniGPT4Qwen-14B的推理
+
+### 权重转换
+将`llm_proj`层的参数提取出来，转换成pth
+```
+python pipe_proj2pth.py --ckpt_dir xxx
+```
+
+### CPU推理
+由于3090无法放下14B模型，所以这里采用CPU进行推理
+
+命令行demo：
+```
+python cli_demo.py --model-type qwen14b_chat -c xxx.pth --cpu-only
+```
+
+gradio webui demo:
+```
+python webui_demo.py --model-type qwen14b_chat -c xxx.pth --cpu-only
+```
+
 
 ## Minigpt4Qwen对话示例
 

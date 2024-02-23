@@ -37,27 +37,6 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data import DataLoader, DistributedSampler
 from torch.utils.data.dataset import ChainDataset
 
-from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
-from torch.distributed.fsdp.fully_sharded_data_parallel import (
-    CPUOffload,
-    BackwardPrefetch,  # 没用到，学习的torch官方FSDP的import
-)
-from torch.distributed.fsdp.wrap import (
-    size_based_auto_wrap_policy,  # 参数分块的策略，详见下面的注释
-    _module_wrap_policy,
-    enable_wrap,  # 没用到，学习的torch官方FSDP的import
-    wrap,  # 没用到，学习的torch官方FSDP的import
-)
-'''
-my_auto_wrap_policy = functools.partial(
-        size_based_auto_wrap_policy, min_num_params=100
-    )
-如果该层中的参数数量大于100，FSDP可以将该层包装或分片。
-如果该层中的参数数量小于100，它将由FSDP与其他小层包裹在一起。
-找到1个最佳的自动包装策略具有挑战性，Py Torch将在未来为该配置添加自动调整。
-如果没有自动调整工具，最好使用不同的自动包装策略实验性地剖析您的工作流程，并找到最佳策略。
-'''
-
 @registry.register_runner("runner_base")
 class RunnerBase:
     """
@@ -121,32 +100,6 @@ class RunnerBase:
                 if self._wrapped_model is None:
                     if self.use_fsdp:
                         assert False, 'Not fully support FSDP, please wait for a while!'
-                        self._model = self._model.bfloat16()
-                        cpu_offload = self.config.run_cfg.get('cpu_offload',None)
-                        cpu_offload = CPUOffload(offload_params=True) if cpu_offload else None
-                        min_num_params = self.config.run_cfg.get('min_num_params',None)
-                        if min_num_params:
-                            my_auto_wrap_policy = partial(
-                                size_based_auto_wrap_policy,
-                                min_num_params=int(min_num_params),
-                            )
-                        else:
-                            my_auto_wrap_policy = None
-                        self._wrapped_model = FSDP(
-                            self._model,
-                            cpu_offload=cpu_offload,
-                            auto_wrap_policy=my_auto_wrap_policy,
-                            device_id=self.config.run_cfg.gpu,
-                            use_orig_params=True,
-                            ignored_modules=[self._model.llm_proj],
-                            limit_all_gathers=True,  # 防止过多的显存占用：https://github.com/pytorch/pytorch/issues/91165#issuecomment-160080533
-                            # limit_all_gathers无法本质解决问题，对于大多数参数都不训练的情况：
-                            # 更本质的问题是，大量参数本身不需要梯度，而其激活值需要梯度
-                            # when a parameter corresponds to a module whose output activations require gradient 
-                            # but itself does not require gradient -- in that case, 
-                            # FSDP's pre-backward hook runs but its post-backward hook does not.
-                            # TODO： 尝试的解决方案，使用torch2.1
-                        )
                     else:
                         self._wrapped_model = DDP(
                             self._model, device_ids=[self.config.run_cfg.gpu]

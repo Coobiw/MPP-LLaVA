@@ -51,7 +51,7 @@ def _load_model_processor(args):
     global load_model_and_preprocess
     load_model_and_preprocess = partial(load_model_and_preprocess,is_eval=True,device=device_map)
 
-    model, vis_processors, _ = load_model_and_preprocess("minigpt4qwen", "qwen7b_chat")
+    model, vis_processors, _ = load_model_and_preprocess("minigpt4qwen", args.model_type)
     model.load_checkpoint(args.checkpoint_path)
 
     generation_config = {
@@ -128,6 +128,7 @@ def _get_image_input():
 def main():
     parser = argparse.ArgumentParser(
         description='QWen-Chat command-line interactive chat demo.')
+    parser.add_argument("--model-type",type=str,default='qwen7b_chat',choices=['qwen7b_chat','qwen14b_chat'])
     parser.add_argument("-c", "--checkpoint-path", type=str,
                         help="Checkpoint name or path, default to %(default)r")
     parser.add_argument("-s", "--seed", type=int, default=42, help="Random seed")
