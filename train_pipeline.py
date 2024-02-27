@@ -173,7 +173,7 @@ def main():
     num_update_steps_per_epoch = math.ceil(len(train_dataloader) / ds_cfg.gradient_accumulation_steps)
     print(num_update_steps_per_epoch)
 
-    # train_dataloader = deepspeed.utils.RepeatingLoader(train_dataloader)
+    train_dataloader = deepspeed.utils.RepeatingLoader(train_dataloader)
 
     start = time.time()
     all_loss = 0.0
