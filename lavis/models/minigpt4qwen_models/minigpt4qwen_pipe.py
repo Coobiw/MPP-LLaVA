@@ -85,7 +85,6 @@ class TokenizerPipeLayer(nn.Module):
 
     def forward(self,ipt):
         image, llm_tokens, targets, attention_mask = ipt
-
         inputs_llm = self.visionpipe(image)
 
         device = inputs_llm.device

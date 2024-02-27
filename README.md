@@ -19,6 +19,7 @@
     - [DeepSpeed推理](#deepspeed推理)
   - [MiniGPT4Qwen-14B的训练](#minigpt4qwen-14b的训练)
     - [2张3090 24GB + DeepSpeed流水线并行](#2张3090-24gb--deepspeed流水线并行)
+    - [数据并行 + 流水线并行（DP + PP）](#数据并行--流水线并行dp--pp)
   - [MiniGPT4Qwen-14B的推理](#minigpt4qwen-14b的推理)
     - [权重转换](#权重转换)
     - [CPU推理](#cpu推理)
@@ -41,7 +42,6 @@
 
 ![](./assets/maimai.png)
 ========
-![](./assets/image-20240223030335224.png)
 
 ## 附属项目
 
@@ -268,6 +268,14 @@ p.s.：如今暂时只支持并行在2张显卡上
 ```
 # num_stages代表并行的卡数，如今只支持2
 python -m torch.distributed.run --nproc_per_node=2 train_pipeline.py --cfg-path lavis/projects/pp_qwen14b/train_pp.yaml --num-stages 2
+```
+
+### 数据并行 + 流水线并行（DP + PP）
+4卡3090，DP=2，PP=2，所以`nproc_per_node`=2 $\times$ 2=4
+训练命令：
+```
+# num_stages代表并行的卡数，如今只支持2
+python -m torch.distributed.run --nproc_per_node=4 train_pipeline.py --cfg-path lavis/projects/pp_qwen14b/train_pp.yaml --num-stages 2
 ```
 
 ## MiniGPT4Qwen-14B的推理

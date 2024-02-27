@@ -136,49 +136,70 @@ def main():
     assert args.num_stages > 1, f'pipeline parallel need stages more than 1, current num_stages is {args.num_stages}'
 
     model = PipelineModule(layers=get_model(model), num_stages=args.num_stages, partition_method='uniform')
+
     print_string = f'GPU{cfg.run_cfg.gpu}\t' + f'Trainable Params: {sum([param.numel() for _, param in model.named_parameters() if param.requires_grad])}'
     os.system(f'echo {print_string}')
+
     model.cuda().bfloat16()
 
 
+
+    engine, _, _, _ = deepspeed.initialize(
+                        model=model,
+                        config=OmegaConf.to_container(ds_cfg),
+                        model_parameters=[p for p in model.parameters() if p.requires_grad],
+                    )
+    model_dtype = next(model.parameters()).dtype
+
     g = torch.Generator()
+    sampler = torch.utils.data.distributed.DistributedSampler(
+                datasets['train'],
+                num_replicas=engine.dp_world_size,
+                rank=engine.mpu.get_data_parallel_rank(),
+                shuffle=False
+            )
+    # print_string = f'GPU{cfg.run_cfg.gpu}\t' + f'rank{engine.mpu.get_data_parallel_rank()}'
+    # os.system(f'echo {print_string}')
+
     train_dataloader = DataLoader(datasets['train'],
-                            shuffle=True,
+                            shuffle=False,
                             drop_last=True,
                             batch_size=ds_cfg.train_micro_batch_size_per_gpu,
                             generator=g,
+                            sampler=sampler,
                             collate_fn=collate_fn_minigpt4qwen_func,
                         )
 
     num_update_steps_per_epoch = math.ceil(len(train_dataloader) / ds_cfg.gradient_accumulation_steps)
     print(num_update_steps_per_epoch)
 
-    train_dataloader = deepspeed.utils.RepeatingLoader(train_dataloader)
-
-    engine, _, _, _ = deepspeed.initialize(model=model, config=OmegaConf.to_container(ds_cfg), model_parameters=[p for p in model.parameters() if p.requires_grad])
-    model_dtype = next(model.parameters()).dtype
+    # train_dataloader = deepspeed.utils.RepeatingLoader(train_dataloader)
 
     start = time.time()
     all_loss = 0.0
-    train_iter = iter(train_dataloader)
 
-    for step in range(cfg.run_cfg.max_epoch * num_update_steps_per_epoch):
-        with (torch.cuda.amp.autocast(dtype=model_dtype,cache_enabled=False) if model_dtype != torch.float32 else contextlib.nullcontext()):
-            loss = engine.train_batch(data_iter=train_iter)
+    for epoch in range(cfg.run_cfg.max_epoch):
+        sampler.set_epoch(epoch)
 
-        print("step = {}, loss = {}".format(step, loss.item()))
-        all_loss += loss.item()
-        if (step + 1) % cfg.run_cfg.log_freq == 0:
-            now_time = time.time()
-            avg_time = (now_time - start) / cfg.run_cfg.log_freq
-            avg_loss = all_loss / cfg.run_cfg.log_freq
-            print(f"Step={step:>6}, loss={avg_loss:.4f}, {avg_time:.2f} it/s")
-            start = now_time
-            all_loss = 0.0
+        train_iter = iter(train_dataloader)
+        for cur_step in range(num_update_steps_per_epoch):
+            step = cur_step + epoch * num_update_steps_per_epoch
+            with (torch.cuda.amp.autocast(dtype=model_dtype,cache_enabled=False) if model_dtype != torch.float32 else contextlib.nullcontext()):
+                loss = engine.train_batch(data_iter=train_iter)
 
-        if (step + 1) % num_update_steps_per_epoch == 0:
-            print(f"Saving at step {step}")
-            engine.save_checkpoint(output_dir)
+            print("step = {}, loss = {}".format(step, loss.item()))
+            all_loss += loss.item()
+            if (step + 1) % cfg.run_cfg.log_freq == 0:
+                now_time = time.time()
+                avg_time = (now_time - start) / cfg.run_cfg.log_freq
+                avg_loss = all_loss / cfg.run_cfg.log_freq
+                print(f"Step={step:>6}, loss={avg_loss:.4f}, {avg_time:.2f} it/s")
+                start = now_time
+                all_loss = 0.0
+
+            if (step + 1) % num_update_steps_per_epoch == 0:
+                print(f"Saving at step {step}")
+                engine.save_checkpoint(output_dir)
 
 
 

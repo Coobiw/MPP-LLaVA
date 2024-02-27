@@ -74,11 +74,11 @@ run:
   dist_url: "env://"
   distributed: True
 
-  max_epoch: 5
+  max_epoch: 20
   log_freq: 50
 
   deepspeed_config:
-    gradient_accumulation_steps: 256
+    gradient_accumulation_steps: 128
     train_micro_batch_size_per_gpu: 1
 
     gradient_clipping: 1.
