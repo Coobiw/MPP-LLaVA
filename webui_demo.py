@@ -138,7 +138,7 @@ def gradio_answer(chatbot, history, img_list, do_sample,num_beams, temperature, 
     generation_config = deepcopy(default_generation_config)
     generation_config.update(
         {
-            "do_sample": do_sample,
+            "do_sample": do_sample=='True',
             "num_beams": num_beams,
             'temperature': temperature,
             "top_k": top_k,
@@ -147,7 +147,7 @@ def gradio_answer(chatbot, history, img_list, do_sample,num_beams, temperature, 
     )
     image_tensor =  img_list[0]  # 如果想支持多图情况：torch.stack(img_list).to(self.device)
     generation_config = GenerationConfig.from_dict(generation_config)
-    response, history = model.chat(query=chatbot[-1][0], history=history, image_tensor=image_tensor, generation_config=generation_config)
+    response, history = model.chat(query=chatbot[-1][0], history=history, image_tensor=image_tensor, generation_config=generation_config,verbose=True)
     chatbot[-1][1] = response
     return chatbot, history, img_list
 
@@ -155,6 +155,8 @@ title = """<h1 align="center">Demo of MiniGPT4Qwen</h1>"""
 description = """<h3>This is the demo of MiniGPT4Qwen. Upload your images and start chatting! <br> To use
             example questions, click example image, hit upload, and press enter in the chatbox. </h3>"""
 
+from transformers.trainer_utils import set_seed
+set_seed(args.seed)
 #TODO show examples below
 
 with gr.Blocks() as demo:
@@ -168,12 +170,12 @@ with gr.Blocks() as demo:
             clear = gr.Button("Restart 🔄")
             do_sample = gr.components.Radio(['True', 'False'],
                             label='do_sample(If False, num_beams, temperature and so on cannot work!)',
-                            value='True')
+                            value='False')
 
             num_beams = gr.Slider(
                 minimum=1,
                 maximum=10,
-                value=5,
+                value=1,
                 step=1,
                 interactive=True,
                 label="beam search numbers)",
@@ -214,7 +216,7 @@ with gr.Blocks() as demo:
             text_input = gr.Textbox(label='User', placeholder='Please upload your image first', interactive=False)
 
             gr.Examples(examples=[
-                [f"examples/minigpt4_image_3.jpg", "describe this image in detail"],
+                ["examples/minigpt4_image_3.jpg", "描述下这幅图片"],
             ], inputs=[image, text_input])
 
     upload_button.click(upload_img, [image, text_input, history,img_list, img_prefix], [image, text_input, upload_button, history, img_list, img_prefix])

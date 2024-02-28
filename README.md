@@ -1,8 +1,9 @@
 
 - [Minigpt4Qwen](#minigpt4qwen)
 - [](#)
-  - [附属项目](#附属项目)
+- [](#-1)
   - [Introduction](#introduction)
+  - [附属项目](#附属项目)
   - [所需计算资源](#所需计算资源)
   - [TODO LIST](#todo-list)
   - [Installation](#installation)
@@ -26,6 +27,9 @@
   - [Minigpt4Qwen对话示例](#minigpt4qwen对话示例)
     - [命令行demo(cli\_demo)](#命令行democli_demo)
     - [webui demo](#webui-demo)
+- [](#-2)
+  - [MiniGPT4Qwen14B对话示例](#minigpt4qwen14b对话示例)
+- [](#-3)
   - [Acknowledgement](#acknowledgement)
   - [FAQ](#faq)
     - [复现时比checkpoint中的log的loss大一个数量级的问题](#复现时比checkpoint中的log的loss大一个数量级的问题)
@@ -36,12 +40,25 @@
 
 # Minigpt4Qwen
 
-知乎博客：https://zhuanlan.zhihu.com/p/664612306
+知乎博客：[MiniGPT4Qwen](https://zhuanlan.zhihu.com/p/664612306) 和 [MiniGPT4Qwen-14B](https://zhuanlan.zhihu.com/p/684462477)
 
 **已经支持Qwen-14B模型在2张RTX3090 24GB上的deepspeed流水线并行训练！**
 
-![](./assets/maimai.png)
+![](./assets/framework.png)
 ========
+![](./assets/maimai.png)
+======
+![image-20231026014107033](./assets/14b_e2.png)
+
+## Introduction
+
+[MiniGPT4](https://github.com/Vision-CAIR/MiniGPT-4)是最近很火的一个MLLM项目，他证明了对于BLIP2的ViT+Q-former这种已经与语言模态做了对齐预训练的结构，**只需要重训一个Linear层，便可以接入新的LLM**。对于现在这个每个月有一个新的更强的LLM出来的时代，这种构建多模态大模型的方式是十分高效的。
+
+然而，MiniGPT4采用LLaMA、Vicuna作为语言模型，它们的中文支持相对较弱，导致训练出的MLLM对中文支持不好。而现在也有许多开源出来的中文LLM，如：阿里云的Qwen、百川智能的baichuan等。
+
+本项目使用Qwen-Chat作为LLM，用MiniGPT4的对齐方式，更加高效地训练了一个MLLM，名为 `Minigpt4Qwen`。**相比MiniGPT4的两阶段训练（低质量数据对齐 + 高质量数据指令微调），本项目仅仅采用18.8k的高质量指令微调数据，经过单阶段预训练即可达到很好的效果。**
+
+MiniGPT4Qwen14B对语言模型进行了Scale Up，采用Qwen-14B-Chat模型作为底座，以获得更好的对话体验。值得一提的是，为了能在3090上训练14B～15B的模型（不进行量化操作），MiniGPT4Qwen14B选择采用DeepSpeed的流水线并行技术。
 
 ## 附属项目
 
@@ -57,17 +74,10 @@
 - 支持deepspeed的训练（使用deepspeed runner）
 - 支持Qwen-14B模型在2张RTX3090 24GB上的deepspeed流水线并行训练
 
-## Introduction
-
-[MiniGPT4](https://github.com/Vision-CAIR/MiniGPT-4)是最近很火的一个MLLM项目，他证明了对于BLIP2的ViT+Q-former这种已经与语言模态做了对齐预训练的结构，**只需要重训一个Linear层，便可以接入新的LLM**。对于现在这个每个月有一个新的更强的LLM出来的时代，这种构建多模态大模型的方式是十分高效的。
-
-然而，MiniGPT4采用LLaMA、Vicuna作为语言模型，它们的中文支持相对较弱，导致训练出的MLLM对中文支持不好。而现在也有许多开源出来的中文LLM，如：阿里云的Qwen、百川智能的baichuan等。
-
-本项目使用Qwen-Chat作为LLM，用MiniGPT4的对齐方式，更加高效地训练了一个MLLM，名为 `Minigpt4Qwen`。**相比MiniGPT4的两阶段训练（低质量数据对齐 + 高质量数据指令微调），本项目仅仅采用18.8k的高质量指令微调数据，经过单阶段预训练即可达到很好的效果。**
 
 ## 所需计算资源
-
-本项目使用了4张/8张 `3090 24G`，进行训练，单卡推理。**实际上，单张24G的3090也能够满足训练的计算需求，但需要调大梯度积累。**
+- MiniGPT4Qwen：>=1张RTX 3090 24GB
+- MiniGPT4Qwen14B：2（的整数倍）张RTX 3090 24GB
 
 ## TODO LIST
 
@@ -315,12 +325,17 @@ python webui_demo.py --model-type qwen14b_chat -c xxx.pth --cpu-only
 ### webui demo
 
 ![image-20231108183204922](assets/image-20231108183204922.png)
-
+====
 ![image-20231108183230619](assets/image-20231108183230619.png)
 
 **开启do_sample和beam search**
 
 ![image-20231108183524096](assets/image-20231108183524096.png)
+
+## MiniGPT4Qwen14B对话示例
+![image-20231026014107033](./assets/14b_e1.png)
+===
+![image-20231026014107033](./assets/14b_e2.png)
 
 ## Acknowledgement
 

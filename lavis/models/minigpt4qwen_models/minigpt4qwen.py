@@ -449,7 +449,7 @@ class Minigpt4Qwen(Blip2Base):
             outputs[0],
             self.llm_tokenizer,
             chat_format=generation_config.chat_format,
-            verbose=False,
+            verbose=kwargs.pop('verbose',False),
             errors='replace'
         )
 

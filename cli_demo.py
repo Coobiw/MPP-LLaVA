@@ -62,7 +62,7 @@ def _load_model_processor(args):
     "max_new_tokens": 512,
     "do_sample": False,
     "transformers_version": "4.31.0"
-}
+    }
 
     generation_config = GenerationConfig.from_dict(generation_config)
 
