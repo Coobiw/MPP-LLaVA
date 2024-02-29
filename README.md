@@ -23,6 +23,7 @@
     - [数据并行 + 流水线并行（DP + PP）](#数据并行--流水线并行dp--pp)
   - [MiniGPT4Qwen-14B的推理](#minigpt4qwen-14b的推理)
     - [权重转换](#权重转换)
+    - [release的权重](#release的权重)
     - [CPU推理](#cpu推理)
   - [Minigpt4Qwen对话示例](#minigpt4qwen对话示例)
     - [命令行demo(cli\_demo)](#命令行democli_demo)
@@ -296,17 +297,20 @@ python -m torch.distributed.run --nproc_per_node=4 train_pipeline.py --cfg-path 
 python pipe_proj2pth.py --ckpt_dir xxx
 ```
 
+### release的权重
+[14B模型checkpoint](https://github.com/Coobiw/MiniGPT4Qwen/releases/download/instruction-data_and_checkpointv1.0/pp_14b_ckpt-logs.zip)
+
 ### CPU推理
 由于3090无法放下14B模型，所以这里采用CPU进行推理
 
 命令行demo：
 ```
-python cli_demo.py --model-type qwen14b_chat -c xxx.pth --cpu-only
+python cli_demo.py --model-type qwen14b_chat -c xxx/model.pth --cpu-only
 ```
 
 gradio webui demo:
 ```
-python webui_demo.py --model-type qwen14b_chat -c xxx.pth --cpu-only
+python webui_demo.py --model-type qwen14b_chat -c xxx/model.pth --cpu-only
 ```
 
 
