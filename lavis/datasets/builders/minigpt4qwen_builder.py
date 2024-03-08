@@ -24,3 +24,10 @@ class LlavaInstructionBuilder(BaseDatasetBuilder):
     DATASET_CONFIG_DICT = {
         'default': 'configs/datasets/llava_instruction/defaults_instruction.yaml'
     }
+
+@registry.register_builder("llava_pretrain")
+class LlavaPretrainBuilder(BaseDatasetBuilder):
+    train_dataset_cls = InstructionDataset
+    DATASET_CONFIG_DICT = {
+        'default': 'configs/datasets/llava_pretrain/defaults.yaml'
+    }

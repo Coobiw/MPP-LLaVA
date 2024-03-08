@@ -9,6 +9,7 @@ from lavis.datasets.builders.base_dataset_builder import load_dataset_config
 from lavis.datasets.builders.minigpt4qwen_builder import (
     Minigpt4InstructionBuilder,
     LlavaInstructionBuilder,
+    LlavaPretrainBuilder,
 )
 
 from lavis.common.registry import registry
@@ -16,6 +17,7 @@ from lavis.common.registry import registry
 __all__ = [
     "Minigpt4InstructionBuilder",
     "LlavaInstructionBuilder",
+    "LlavaPretrainBuilder",
 ]
 
 
