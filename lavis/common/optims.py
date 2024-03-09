@@ -151,7 +151,7 @@ class StepLinearWarmupCosineLRScheduler:
             )
         else:
             step_cosine_lr_schedule(
-                step=cur_epoch*cur_step - self.warmup_steps,
+                step=cur_step - self.warmup_steps,
                 optimizer=self.optimizer,
                 max_step=self.max_steps - self.warmup_steps,
                 init_lr=self.init_lr,

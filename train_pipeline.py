@@ -221,7 +221,7 @@ def main():
             with (torch.cuda.amp.autocast(dtype=model_dtype,cache_enabled=False) if model_dtype != torch.float32 else contextlib.nullcontext()):
                 loss = engine.train_batch(data_iter=train_iter)
             
-            lr_scheduler.step(cur_epoch=epoch, cur_step=cur_step)
+            lr_scheduler.step(cur_epoch=epoch, cur_step=step)
 
             print(f"step = {step}, loss = {loss.item()}, lr={optimizer.param_groups[0]['lr']}")
 
