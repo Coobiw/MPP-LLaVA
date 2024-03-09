@@ -101,6 +101,30 @@ def collate_fn_minigpt4qwen(batch,preprocess_func):
                 data_dict['labels']
         )
 
+def get_scheduler(cfg,optimizer,max_steps,steps_per_epoch):
+    lr_sched_cls = registry.get_lr_scheduler_class(cfg.run_cfg.lr_sched)
+
+    max_epoch = cfg.run_cfg.max_epoch
+
+    min_lr = cfg.run_cfg.min_lr
+    init_lr = cfg.run_cfg.init_lr
+
+    decay_rate = cfg.run_cfg.get("lr_decay_rate", None)
+    warmup_start_lr = cfg.run_cfg.get("warmup_lr", -1)
+    warmup_steps = int(cfg.run_cfg["warmup_ratio"] * steps_per_epoch) if cfg.run_cfg.get("warmup_ratio",None) else cfg.run_cfg.get("warmup_steps", 0)
+
+    lr_sched = lr_sched_cls(
+        optimizer=optimizer,
+        max_epoch=max_epoch,
+        min_lr=min_lr,
+        init_lr=init_lr,
+        decay_rate=decay_rate,
+        warmup_start_lr=warmup_start_lr,
+        warmup_steps=warmup_steps,
+        max_steps=max_steps,
+    )
+    return lr_sched
+
 def main():
     # allow auto-dl completes on main process without timeout when using NCCL backend.
     # os.environ["NCCL_BLOCKING_WAIT"] = "1"
@@ -142,9 +166,7 @@ def main():
 
     model.cuda().bfloat16()
 
-
-
-    engine, _, _, _ = deepspeed.initialize(
+    engine, optimizer, _, _ = deepspeed.initialize(
                         model=model,
                         config=OmegaConf.to_container(ds_cfg),
                         model_parameters=[p for p in model.parameters() if p.requires_grad],
@@ -168,12 +190,18 @@ def main():
                             generator=g,
                             sampler=sampler,
                             collate_fn=collate_fn_minigpt4qwen_func,
+                            num_workers=cfg.run_cfg.num_workers,
                         )
 
     num_update_steps_per_epoch = math.ceil(len(train_dataloader) / ds_cfg.gradient_accumulation_steps)
     print(num_update_steps_per_epoch)
 
     train_dataloader = deepspeed.utils.RepeatingLoader(train_dataloader)
+
+    lr_scheduler = get_scheduler(cfg,optimizer,
+                            max_steps=cfg.run_cfg.max_epoch * num_update_steps_per_epoch,
+                            steps_per_epoch=num_update_steps_per_epoch
+                        )
 
     start = time.time()
     all_loss = 0.0
@@ -186,6 +214,8 @@ def main():
             step = cur_step + epoch * num_update_steps_per_epoch
             with (torch.cuda.amp.autocast(dtype=model_dtype,cache_enabled=False) if model_dtype != torch.float32 else contextlib.nullcontext()):
                 loss = engine.train_batch(data_iter=train_iter)
+            
+            lr_scheduler.step(cur_epoch=epoch, cur_step=cur_step)
 
             print("step = {}, loss = {}".format(step, loss.item()))
             all_loss += loss.item()
@@ -193,7 +223,7 @@ def main():
                 now_time = time.time()
                 avg_time = (now_time - start) / cfg.run_cfg.log_freq
                 avg_loss = all_loss / cfg.run_cfg.log_freq
-                print(f"Step={step:>6}, loss={avg_loss:.4f}, {avg_time:.2f} it/s")
+                print(f"Step={step:>6}, lr={optimizer.param_groups[0]['lr']}, loss={avg_loss:.4f}, {avg_time:.2f} it/s")
                 start = now_time
                 all_loss = 0.0
 
