@@ -19,7 +19,7 @@ from torch.utils.data import DataLoader
 
 import lavis.tasks as tasks
 from lavis.common.config import Config
-from lavis.common.dist_utils import get_rank, init_distributed_mode, init_deepspeed_distributed_mode
+from lavis.common.dist_utils import get_rank, init_distributed_mode, init_deepspeed_distributed_mode, is_main_process
 from lavis.common.logger import setup_logger
 from lavis.common.optims import (
     LinearWarmupCosineLRScheduler,
@@ -43,6 +43,8 @@ import deepspeed
 
 import contextlib
 from functools import partial
+
+import wandb
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Training")
@@ -136,6 +138,7 @@ def main():
     cfg = Config(args)
 
     output_dir = cfg.run_cfg.output_dir
+    os.makedirs(output_dir,exist_ok=True)
 
     init_deepspeed_distributed_mode(cfg.run_cfg)
 
@@ -206,6 +209,9 @@ def main():
     start = time.time()
     all_loss = 0.0
 
+    if is_main_process():
+        wandb.init(project="MBPP-Qwen14B_Pretrain")
+    
     for epoch in range(cfg.run_cfg.max_epoch):
         sampler.set_epoch(epoch)
 
@@ -217,7 +223,12 @@ def main():
             
             lr_scheduler.step(cur_epoch=epoch, cur_step=cur_step)
 
-            print("step = {}, loss = {}".format(step, loss.item()))
+            print(f"step = {step}, loss = {loss.item()}, lr={optimizer.param_groups[0]['lr']}")
+
+            if is_main_process():
+                wandb.log({"loss": loss.item()})
+                wandb.log({"learning_rate": optimizer.param_groups[0]['lr']})
+            
             all_loss += loss.item()
             if (step + 1) % cfg.run_cfg.log_freq == 0:
                 now_time = time.time()
@@ -230,6 +241,9 @@ def main():
             if (step + 1) % num_update_steps_per_epoch == 0:
                 print(f"Saving at step {step}")
                 engine.save_checkpoint(output_dir)
+    
+    if is_main_process():
+        wandb.finish()
 
 
 
