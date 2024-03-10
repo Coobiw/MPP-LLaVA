@@ -226,8 +226,8 @@ def main():
             print(f"step = {step}, loss = {loss.item()}, lr={optimizer.param_groups[0]['lr']}")
 
             if is_main_process():
-                wandb.log({"loss": loss.item()})
-                wandb.log({"learning_rate": optimizer.param_groups[0]['lr']})
+                wandb.log({"loss": loss.item()}, step=step)
+                wandb.log({"learning_rate": optimizer.param_groups[0]['lr']}, step=step)
             
             all_loss += loss.item()
             if (step + 1) % cfg.run_cfg.log_freq == 0:
