@@ -233,7 +233,8 @@ def main():
                 if '<ImageHere>' not in query:
                     query = '<Img><ImageHere></Img> ' + query
                 first = False
-            response, history = model.chat(query, history=history, image_tensor=image_tensor, generation_config=generation_config)
+            with torch.autocast(device_type="cpu",enabled=True,dtype=torch.bfloat16) if args.cpu_only else torch.cuda.amp.autocast(enabled=True,dtype=torch.bfloat16):
+                response, history = model.chat(query, history=history, image_tensor=image_tensor, generation_config=generation_config)
             _clear_screen()
             print(f"\nUser: {query}")
             print(f"\nQwen-Chat: {response}")

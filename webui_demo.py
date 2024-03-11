@@ -147,7 +147,9 @@ def gradio_answer(chatbot, history, img_list, do_sample,num_beams, temperature, 
     )
     image_tensor =  img_list[0]  # 如果想支持多图情况：torch.stack(img_list).to(self.device)
     generation_config = GenerationConfig.from_dict(generation_config)
-    response, history = model.chat(query=chatbot[-1][0], history=history, image_tensor=image_tensor, generation_config=generation_config,verbose=True)
+    global args
+    with torch.autocast(device_type="cpu",enabled=True,dtype=torch.bfloat16) if args.cpu_only else torch.cuda.amp.autocast(enabled=True,dtype=torch.bfloat16):
+        response, history = model.chat(query=chatbot[-1][0], history=history, image_tensor=image_tensor, generation_config=generation_config,verbose=True)
     chatbot[-1][1] = response
     return chatbot, history, img_list
 
