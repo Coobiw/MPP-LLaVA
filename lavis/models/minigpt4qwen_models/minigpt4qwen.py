@@ -76,6 +76,7 @@ class Minigpt4Qwen(Blip2Base):
         freeze_queries=False,
         freeze_proj=False,
         enable_autocast=True,
+        freeze_llm=True,
     ):
         super().__init__()
         transformers_version = version.parse(transformers.__version__)
@@ -146,15 +147,22 @@ class Minigpt4Qwen(Blip2Base):
             # device_map='cuda',
             device_map='cpu',
         )
-        # self.llm_model.transformer.gradient_checkpointing = True # 打开llm的gradient checkpointing
+        self.llm_model.transformer.gradient_checkpointing = True # 打开llm的gradient checkpointing
 
         self.llm_tokenizer.pad_token_id = self.llm_tokenizer.eod_id
         self.replace_image_token_id = self.llm_tokenizer("<|extra_0|>").input_ids[0]
         self.replace_image_string = '<|extra_0|>'
         # self.llm_model.resize_token_embeddings(len(self.llm_tokenizer))
 
-        for name, param in self.llm_model.named_parameters():
-            param.requires_grad = False
+        self.freeze_llm = freeze_llm
+        if self.freeze_llm:
+            print("Freeze LLM...")
+            for name, param in self.llm_model.named_parameters():
+                param.requires_grad = False
+        else:
+            print("Unfreeze LLM!!!")
+            for name, param in self.llm_model.named_parameters():
+                param.requires_grad = True
 
         self.llm_proj = nn.Linear(
             self.Qformer.config.hidden_size, self.llm_model.config.hidden_size
@@ -537,6 +545,9 @@ class Minigpt4Qwen(Blip2Base):
         # autocast config
         enable_autocast = cfg.get("enable_autocast",True)
 
+        # freeze llm
+        freeze_llm = cfg.get("freeze_llm",True)
+
         model = cls(
             vit_model=vit_model,
             img_size=img_size,
@@ -557,7 +568,8 @@ class Minigpt4Qwen(Blip2Base):
             freeze_qformer=freeze_qformer,
             freeze_queries=freeze_queries,
             freeze_proj=freeze_proj,
-            enable_autocast = enable_autocast,
+            enable_autocast=enable_autocast,
+            freeze_llm=freeze_llm,
         )
 
         model.load_checkpoint_from_config(cfg)

@@ -180,6 +180,7 @@ class LMPipeLayer(torch.nn.Module):
 class LossPipeLayer(torch.nn.Module):
     def __init__(self, model: Minigpt4Qwen):
         super().__init__()
+        self.freeze_llm = model.freeze_llm
 
     def forward(self, ipt):
         logits, labels = ipt
@@ -192,13 +193,11 @@ class LossPipeLayer(torch.nn.Module):
         loss_fct = nn.CrossEntropyLoss()
         loss = loss_fct(shift_logits.reshape(-1, shift_logits.size(-1)), shift_labels.reshape(-1))
         # print(loss)
-        return loss, bs
+        return (loss, torch.tensor(bs)) if self.freeze_llm else loss
 
-class IndentityPipeLayer(nn.Module):
+class IndentityPipeLayerLast(nn.Module):
     def __init__(self, model: Minigpt4Qwen):
         super().__init__()
-        self.occupy = nn.Linear(1000,1000,bias=False)
-        nn.init.constant_(self.occupy.weight,0.)
     
     def forward(self,ipt):
         loss, bs = ipt
@@ -206,12 +205,23 @@ class IndentityPipeLayer(nn.Module):
         # return loss + 0. * self.occupy(zero_in).sum()
         return loss
 
-def get_model(model):
+class IndentityPipeLayer(nn.Module):
+    def __init__(self, model: Minigpt4Qwen):
+        super().__init__()
+    
+    def forward(self,ipt):
+        inputs_embeds, attention_mask, targets, rotary_pos_emb_list, position_ids, output_shape = ipt
+        return inputs_embeds, attention_mask, targets, rotary_pos_emb_list, position_ids, output_shape
+
+def get_model(model,freeze_llm):
     layers = [LayerSpec(TokenizerPipeLayer,model=model),
+            *[LayerSpec(IndentityPipeLayer,model=model) for _ in range(4)], # 调节控制多卡的显存分配
             *[LayerSpec(QwenBlockPipeLayer, model=model, layer_idx=idx) for idx in
                 range(model.llm_model.transformer.config.num_hidden_layers)],
             LayerSpec(FLNPipeLayer, model=model),
             LayerSpec(LMPipeLayer, model=model),
             LayerSpec(LossPipeLayer, model=model),
-            LayerSpec(IndentityPipeLayer,model=model)]
+        ]
+    if freeze_llm:
+        layers.append(LayerSpec(IndentityPipeLayerLast,model=model))
     return layers

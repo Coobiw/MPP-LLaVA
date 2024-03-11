@@ -7,6 +7,7 @@
 import math
 import time
 from omegaconf import OmegaConf
+from functools import partial
 
 import argparse
 import os
@@ -85,7 +86,7 @@ def get_runner_class(cfg):
 
     return runner_cls
 
-def collate_fn_minigpt4qwen(batch,preprocess_func):
+def collate_fn_minigpt4qwen(batch,preprocess_func,freeze_llm=True,dtype=torch.float32):
     image_list, conversation_list = [], []
 
     for sample in batch:
@@ -98,6 +99,9 @@ def collate_fn_minigpt4qwen(batch,preprocess_func):
             "conversations": conversation_list,
         }
     data_dict = preprocess_func(new_batch['conversations'])
+
+    if not freeze_llm:
+        new_batch['image'] = new_batch['image'].to(dtype)
 
     return ((new_batch['image'], data_dict['input_ids'],data_dict['labels'],data_dict['attention_mask']),
                 data_dict['labels']
@@ -155,6 +159,8 @@ def main():
     datasets = concat_datasets(datasets)
 
     model = task.build_model(cfg)
+    freeze_llm = model.freeze_llm
+
     # preprocoss of multimodal tokenizer
     preprocess_func = \
         partial(model.preprocess,tokenizer=model.llm_tokenizer,max_len=model.max_txt_len,image_len=model.num_query_token)
@@ -162,7 +168,7 @@ def main():
     
     assert args.num_stages > 1, f'pipeline parallel need stages more than 1, current num_stages is {args.num_stages}'
 
-    model = PipelineModule(layers=get_model(model), num_stages=args.num_stages, partition_method='uniform')
+    model = PipelineModule(layers=get_model(model,freeze_llm=freeze_llm), num_stages=args.num_stages, partition_method='uniform')# if freeze_llm else 'parameters')
 
     print_string = f'GPU{cfg.run_cfg.gpu}\t' + f'Trainable Params: {sum([param.numel() for _, param in model.named_parameters() if param.requires_grad])}'
     os.system(f'echo {print_string}')
@@ -192,7 +198,7 @@ def main():
                             batch_size=ds_cfg.train_micro_batch_size_per_gpu,
                             generator=g,
                             sampler=sampler,
-                            collate_fn=collate_fn_minigpt4qwen_func,
+                            collate_fn=partial(collate_fn_minigpt4qwen_func,freeze_llm=freeze_llm,dtype=torch.float32 if freeze_llm else model_dtype),
                             num_workers=cfg.run_cfg.num_workers,
                         )
 
@@ -218,7 +224,7 @@ def main():
         train_iter = iter(train_dataloader)
         for cur_step in range(num_update_steps_per_epoch):
             step = cur_step + epoch * num_update_steps_per_epoch
-            with (torch.cuda.amp.autocast(dtype=model_dtype,cache_enabled=False) if model_dtype != torch.float32 else contextlib.nullcontext()):
+            with (torch.cuda.amp.autocast(dtype=model_dtype,cache_enabled=False) if freeze_llm and (model_dtype != torch.float32) else contextlib.nullcontext()):
                 loss = engine.train_batch(data_iter=train_iter)
             
             lr_scheduler.step(cur_epoch=epoch, cur_step=step)
@@ -241,12 +247,6 @@ def main():
             if (step + 1) % num_update_steps_per_epoch == 0:
                 print(f"Saving at step {step}")
                 engine.save_checkpoint(output_dir)
-            
-            if is_main_process(): 
-                # 仅保留llm_proj的权重，如果内存吃紧，可以删除掉deepspeed保存部分，仅保存model.pth
-                # deepspeed保存全部模型有29GB，如果存储不足，可以取消下面一行的注释
-                os.system(f"python pipe_proj2pth.py --ckpt_dir {output_dir}/global_step{num_update_steps_per_epoch*(epoch+1)}")
-                # os.system(f"rm {output_dir}/global_step{num_update_steps_per_epoch*(epoch+1)}/*.pt")
     
     if is_main_process():
         wandb.finish()
