@@ -210,7 +210,7 @@ def main():
     all_loss = 0.0
 
     if is_main_process():
-        wandb.init(project="MBPP-Qwen14B_Pretrain")
+        wandb.init(project="MBPP-Qwen14B")
     
     for epoch in range(cfg.run_cfg.max_epoch):
         sampler.set_epoch(epoch)
@@ -241,6 +241,12 @@ def main():
             if (step + 1) % num_update_steps_per_epoch == 0:
                 print(f"Saving at step {step}")
                 engine.save_checkpoint(output_dir)
+            
+            if is_main_process(): 
+                # 仅保留llm_proj的权重，如果内存吃紧，可以删除掉deepspeed保存部分，仅保存model.pth
+                # deepspeed保存全部模型有29GB，如果存储不足，可以取消下面一行的注释
+                os.system(f"python pipe_proj2pth.py --ckpt_dir {output_dir}/global_step{num_update_steps_per_epoch*(epoch+1)}")
+                # os.system(f"rm {output_dir}/global_step{num_update_steps_per_epoch*(epoch+1)}/*.pt")
     
     if is_main_process():
         wandb.finish()

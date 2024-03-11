@@ -87,7 +87,26 @@ class BaseModel(nn.Module):
         own load_from_pretrained() method.
         """
         load_finetuned = cfg.get("load_finetuned", True)
-        if load_finetuned:
+        load_pretrained = cfg.get("load_pretrained", True)
+        if load_finetuned and load_pretrained:
+            # load pre-trained weights
+            pretrain_path = cfg.get("pretrained", None)
+            assert "Found load_finetuned is False, but pretrain_path is None."
+            if not os.path.isabs(pretrain_path):
+                pretrain_path = get_cache_path(pretrain_path)
+            print(f'Start loading pretrained model: {pretrain_path}')
+            self.load_from_pretrained(url_or_filename=pretrain_path, **kwargs)
+
+            # load finetuned_weights
+            finetune_path = cfg.get("finetuned", None)
+            assert (
+                finetune_path is not None
+            ), "Found load_finetuned is True, but finetune_path is None."
+            if not os.path.isabs(finetune_path):
+                finetune_path = get_cache_path(finetune_path)
+            print(f'Start loading finetuned model: {finetune_path}')
+            self.load_checkpoint(url_or_filename=finetune_path)
+        elif load_finetuned:
             finetune_path = cfg.get("finetuned", None)
             assert (
                 finetune_path is not None
