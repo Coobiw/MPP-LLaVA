@@ -77,7 +77,7 @@ run:
   dist_url: "env://"
   distributed: True
 
-  max_epoch: 1
+  max_epoch: 2
   log_freq: 10
 
   lr_sched: "linear_warmup_cosine_lr_step-wise"
