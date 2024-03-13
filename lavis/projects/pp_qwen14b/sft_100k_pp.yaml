@@ -1,0 +1,120 @@
+model:
+  arch: minigpt4qwen
+  model_type: qwen14b_chat
+  load_finetuned: True
+  load_pretrained: True
+
+  # pretrained: "https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/InstructBLIP/blip2_pretrained_flant5xxl.pth"
+  pretrained: "ckpt/blip2/blip2_pretrained_flant5xxl.pth"
+  finetuned: "/root/MiniGPT4Qwen/lavis/output/pp_14b/pretrain/global_step2181/model.pth"
+
+  # vit encoder
+  vit_model: "eva_clip_g"
+  image_size: 224
+  drop_path_rate: 0
+  use_grad_checkpoint: True
+  vit_precision: "fp16"  # 如果你要打开vit进行训练，这里需要调整成fp32,否则如果开启amp混合精度训练会有问题（在scaler处报错,因为没有实现一个fp16的AdamW）
+  freeze_vit: True
+  unfreeze_pos_embed: False
+
+  # Q-Former
+  num_query_token: 32
+  qformer_text_input: False
+  freeze_qformer: True
+  freeze_queries: True
+
+  # projection
+  freeze_proj: False
+
+  # path to Vicuna checkpoint
+  llm_model: "ckpt/Qwen-14B-Chat"
+
+  # unfreeze LLM for better chat
+  freeze_llm: False
+
+  # lora config
+  get_lora: False
+  lora_alpha: 32
+  lora_r: 8
+  lora_dropout: 0.05
+
+  # text length when training
+  max_txt_len: 512
+
+  # enable autocast of vit
+  enable_autocast: False
+
+datasets:
+  llava_instruct_100k: # name of the dataset builder
+    vis_processor:
+        train:
+          name: "blip2_image_train"
+          image_size: 224
+    text_processor:
+        train:
+          name: "base_instruction"
+          max_words: 200
+
+run:
+  output_dir: "lavis/output/pp_14b/sft_100k/"
+
+  task: deepspeed_image_text_pretrain
+
+  num_workers: 4
+
+  seed: 42
+
+  world_size: 1
+  dist_url: "env://"
+  distributed: True
+
+  max_epoch: 1
+  log_freq: 10
+
+  lr_sched: "linear_warmup_cosine_lr_step-wise"
+  warmup_lr: 0
+  init_lr: 2e-5
+  min_lr: 0
+  warmup_ratio: 0.1
+
+  deepspeed_config:
+    # global batch = 128 = n_ranks * grad_acc_steps * micro_batch_size = (4//2) * 64 * 1
+    gradient_accumulation_steps: 128 # 64
+    train_micro_batch_size_per_gpu: 1
+
+    gradient_clipping: 1.
+    steps_per_print: 10
+    wall_clock_breakdown: false
+    dump_state: False
+
+    fp16:
+        enabled: false
+        loss_scale: 0
+        loss_scale_window: 1000
+        initial_scale_power: 16
+        hysteresis: 2
+        min_loss_scale: 1
+
+    bf16:
+        enabled: true
+
+    optimizer:
+        type: "AdamW"
+        params:
+            lr: 2e-5
+            betas: [0.9,0.99]
+            eps: 1e-7
+            weight_decay: 0.
+
+    zero_optimization:
+        stage: 1
+        offload_optimizer:
+          device: "cpu"
+          pin_memory: true
+        allgather_partitions: true
+        allgather_bucket_size: 2e8
+        overlap_comm: true
+        reduce_scatter: true
+        reduce_bucket_size: 2e8
+        contiguous_gradients: true
+
