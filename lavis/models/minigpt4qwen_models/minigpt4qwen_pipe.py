@@ -198,6 +198,8 @@ class LossPipeLayer(torch.nn.Module):
 class IndentityPipeLayerLast(nn.Module):
     def __init__(self, model: Minigpt4Qwen):
         super().__init__()
+        self.occupy = nn.Linear(1000,1000,bias=False)
+        nn.init.constant_(self.occupy.weight,0.)
     
     def forward(self,ipt):
         loss, bs = ipt
