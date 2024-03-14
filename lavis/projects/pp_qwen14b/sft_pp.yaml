@@ -39,7 +39,7 @@ model:
   lora_dropout: 0.05
 
   # text length when training
-  max_txt_len: 256
+  max_txt_len: 512
 
   # enable autocast of vit
   enable_autocast: False
@@ -77,14 +77,14 @@ run:
   dist_url: "env://"
   distributed: True
 
-  max_epoch: 2
+  max_epoch: 1
   log_freq: 10
 
   lr_sched: "linear_warmup_cosine_lr_step-wise"
   warmup_lr: 0
   init_lr: 2e-5
   min_lr: 0
-  warmup_ratio: 0.3
+  warmup_ratio: 0.1
 
   deepspeed_config:
     # global batch = 128 = n_ranks * grad_acc_steps * micro_batch_size = (4//2) * 64 * 1

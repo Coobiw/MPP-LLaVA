@@ -54,6 +54,9 @@ def _load_model_processor(args):
     model, vis_processors, _ = load_model_and_preprocess("minigpt4qwen", args.model_type)
     model.load_checkpoint(args.checkpoint_path)
 
+    model.llm_model.transformer.bfloat16()
+    model.llm_model.lm_head.bfloat16()
+
     generation_config = {
     "chat_format": "chatml",
     "eos_token_id": 151643,
@@ -233,8 +236,12 @@ def main():
                 if '<ImageHere>' not in query:
                     query = '<Img><ImageHere></Img> ' + query
                 first = False
-            with torch.autocast(device_type="cpu",enabled=True,dtype=torch.bfloat16) if args.cpu_only else torch.cuda.amp.autocast(enabled=True,dtype=torch.bfloat16):
-                response, history = model.chat(query, history=history, image_tensor=image_tensor, generation_config=generation_config)
+            if args.cpu_only:
+                model.bfloat16()
+                response, history = model.chat(query, history=history, image_tensor=image_tensor.bfloat16(), generation_config=generation_config)
+            else:
+                with torch.cuda.amp.autocast(enabled=True,dtype=torch.bfloat16):
+                    response, history = model.chat(query, history=history, image_tensor=image_tensor, generation_config=generation_config)
             _clear_screen()
             print(f"\nUser: {query}")
             print(f"\nQwen-Chat: {response}")

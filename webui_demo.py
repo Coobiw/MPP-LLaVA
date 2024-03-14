@@ -37,6 +37,9 @@ def _load_model_processor(args):
     model, vis_processors, _ = load_model_and_preprocess("minigpt4qwen", args.model_type)
     model.load_checkpoint(args.checkpoint_path)
 
+    model.llm_model.transformer.bfloat16()
+    model.llm_model.lm_head.bfloat16()
+
     generation_config = {
     "chat_format": "chatml",
     "eos_token_id": 151643,
@@ -148,8 +151,12 @@ def gradio_answer(chatbot, history, img_list, do_sample,num_beams, temperature, 
     image_tensor =  img_list[0]  # 如果想支持多图情况：torch.stack(img_list).to(self.device)
     generation_config = GenerationConfig.from_dict(generation_config)
     global args
-    with torch.autocast(device_type="cpu",enabled=True,dtype=torch.bfloat16) if args.cpu_only else torch.cuda.amp.autocast(enabled=True,dtype=torch.bfloat16):
-        response, history = model.chat(query=chatbot[-1][0], history=history, image_tensor=image_tensor, generation_config=generation_config,verbose=True)
+    if args.cpu_only:
+        model.bfloat16()
+        response, history = model.chat(query=chatbot[-1][0], history=history, image_tensor=image_tensor.bfloat16(), generation_config=generation_config,verbose=True)
+    else:
+        with torch.cuda.amp.autocast(enabled=True,dtype=torch.bfloat16):
+            response, history = model.chat(query=chatbot[-1][0], history=history, image_tensor=image_tensor.bfloat16(), generation_config=generation_config,verbose=True)
     chatbot[-1][1] = response
     return chatbot, history, img_list
 
@@ -230,4 +237,4 @@ with gr.Blocks() as demo:
     )
     clear.click(gradio_reset, [history, img_list], [chatbot, image, text_input, upload_button, history, img_list], queue=False)
 
-demo.launch(share=True)
+demo.launch(share=True,inbrowser=True)
