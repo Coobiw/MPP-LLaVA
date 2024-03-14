@@ -1,7 +1,5 @@
 
 - [MPP-Qwen14B](#mpp-qwen14b)
-- [](#)
-- [](#-1)
   - [Introduction](#introduction)
   - [附属项目](#附属项目)
   - [所需计算资源](#所需计算资源)
@@ -12,13 +10,11 @@
   - [训练](#训练)
     - [数据准备](#数据准备)
     - [数据tokens数目分析](#数据tokens数目分析)
-- [](#-2)
     - [运行train\_pipeline.py进行流水线并行训练](#运行train_pipelinepy进行流水线并行训练)
   - [推理](#推理)
     - [运行命令行demo](#运行命令行demo)
     - [运行gradio webui demo](#运行gradio-webui-demo)
   - [MPP-Qwen14B对话示例](#mpp-qwen14b对话示例)
-- [](#-3)
   - [Acknowledgement](#acknowledgement)
   - [License](#license)
 
