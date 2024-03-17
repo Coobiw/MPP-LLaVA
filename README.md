@@ -11,6 +11,9 @@
     - [数据准备](#数据准备)
     - [数据tokens数目分析](#数据tokens数目分析)
     - [运行train\_pipeline.py进行流水线并行训练](#运行train_pipelinepy进行流水线并行训练)
+  - [deepspeed权重转换为pth文件](#deepspeed权重转换为pth文件)
+    - [预训练阶段（仅转换linear projection层）](#预训练阶段（仅转换linear projection层）)
+    - [sft阶段（需要转换projection层和所有LLM的参数）](#sft阶段（需要转换projection层和所有LLM的参数）)
   - [推理](#推理)
     - [运行命令行demo](#运行命令行demo)
     - [运行gradio webui demo](#运行gradio-webui-demo)
@@ -199,6 +202,24 @@ SFT：
 ```bash
 python -m torch.distributed.run --nproc_per_node=6 train_pipeline.py --cfg-path lavis/projects/pp_qwen14b/sft_100k_pp.yaml --num-stages 6
 ```
+
+## deepspeed权重转换为pth文件
+
+### 预训练阶段（仅转换linear projection层）
+
+```bash
+python pipe_proj2pth.py --ckpt-dir lavis/output/pp_14b/pretrain/global_stepxxx
+```
+
+转换后，模型文件会存储在`ckpt_dir`底下，名为`model.pth`
+
+### sft阶段（需要转换projection层和所有LLM的参数）
+
+```bash
+python pipemodel2pth.py --ckpt-dir lavis/output/pp_14b/sft/global_stepxxx
+```
+
+转换后，模型文件会存储在`ckpt_dir`底下，名为`unfreeze_llm_model.pth`
 
 ## 推理
 
