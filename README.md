@@ -31,11 +31,14 @@ MiniGPT4Qwen相关可以跳转到：[MiniGPT4Qwen_README.md](https://github.com/
 
 ![](./assets/framework2.png)
 ========
-![](./assets/mpp-qwen-2.png)
+![](./assets/new_demo1.jpg)
 ======
-![](./assets/mpp-qwen1.png)
+![](./assets/new_demo2.jpg)
+======
+![](./assets/new_demo3.jpg)
 
 ## Introduction
+
 去年11月发布的[LLaVA1.5](https://github.com/haotian-liu/LLaVA)，用可以接受的数据量（558K Pretrain + 665K SFT），以Vicuna-v1.5-13B为基座，得到了非常好的性能。后续被学术界和工业界广泛follow。
 
 在读过其在github上的README后发现，24GB的消费级别显卡（RTX3090、RTX4090等）仅可以完成以Vicuna-v1.5-7B为底座的训练，而且Open出的是LoRA的配置。
@@ -60,7 +63,7 @@ MiniGPT4Qwen相关可以跳转到：[MiniGPT4Qwen_README.md](https://github.com/
 - MPP-Qwen14B SFT：6张RTX 4090 24GB
 
 ## TODO LIST
-- [ ] 支持model parallelism的推理（参考[llama2-accessory](https://github.com/Alpha-VLLM/LLaMA2-Accessory)）
+- [x] 支持model parallelism的推理（使用了transformers的`device_map="auto"`）
 - [ ] 开源sft权重（huggingface或百度网盘）
 - [x] 开源pretrain权重
 - [x] 开源处理好的pretrain和sft的数据集json文件
@@ -229,8 +232,26 @@ python pipemodel2pth.py --ckpt-dir lavis/output/pp_14b/sft/global_stepxxx
 
 ### 运行命令行demo
 
+**Single-GPU Inference（显存>=32GB才可以）:**
+
 ```bash
-python cli_demo.py -c xxxxxx --model-type qwen14b_chat --cpu-only # 如果显存足够(>30GB)可以不要--cpu-only
+python cli_demo.py --model-type qwen14b_chat -c lavis/output/pp_14b/sft/global_step296/unfreeze_llm_model.pth
+```
+
+
+
+**MultiGPU(llm使用`device_map="auto"加载`，需要两张以上GPU，加起来的显存大于32GB即可，本项目使用AutoDL的2x24GB 4090)：**
+
+```bash
+python cli_demo.py --model-type qwen14b_chat -c lavis/output/pp_14b/sft/global_step296/unfreeze_llm_model.pth --llm_device_map "auto"
+```
+
+
+
+**CPU（速度极慢）:**
+
+```bash
+python cli_demo.py -c xxxxxx --model-type qwen14b_chat --cpu-only # 如果显存足够(>32GB)可以不要--cpu-only
 ```
 
 运行后需要输入图片路径，输入后进入对话
@@ -248,15 +269,36 @@ python cli_demo.py -c xxxxxx --model-type qwen14b_chat --cpu-only # 如果显存
 > :img 查看输入的图像路径
 
 ### 运行gradio webui demo
+
+**Single-GPU Inference（显存>=32GB才可以）:**
+
+```bash
+python webui_demo.py --model-type qwen14b_chat -c lavis/output/pp_14b/sft/global_step296/unfreeze_llm_model.pth
+```
+
+
+
+**MultiGPU(llm使用`device_map="auto"加载`，需要两张以上GPU，加起来的显存大于32GB即可，本项目使用AutoDL的2x24GB 4090)：**
+
+```bash
+python webui_demo.py --model-type qwen14b_chat -c lavis/output/pp_14b/sft/global_step296/unfreeze_llm_model.pth --llm_device_map "auto"
+```
+
+
+
+**CPU：**
+
 ```bash
 python webui_demo.py -c xxxxxx --model-type qwen14b_chat --cpu-only # 如果显存足够(>30GB)可以不要--cpu-only
 ```
 
 ## MPP-Qwen14B对话示例
 ========
-![](./assets/mpp-qwen1.png)
+![](./assets/new_demo1.jpg)
 ======
-![](./assets/mpp-qwen-2.png)
+![](./assets/new_demo2.jpg)
+======
+![](./assets/new_demo3.jpg)
 
 ## Acknowledgement
 
