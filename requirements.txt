@@ -34,3 +34,6 @@ transformers_stream_generator
 
 # deepspeed
 deepspeed
+
+# gradio
+gradio==3.50.2

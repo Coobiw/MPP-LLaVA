@@ -141,9 +141,9 @@ def make_context(
             + nl_tokens
             + im_start_tokens
             + tokenizer.encode("assistant")
-            # + nl_tokens # now: bos_token = nl_tokens, so don't need this addition
+            + nl_tokens # now: bos_token = nl_tokens, so don't need this addition
         )
-        raw_text += f"\n{im_start}user\n{query}{im_end}\n{im_start}assistant" # now: bos_token = nl_tokens, so don't need "\n"
+        raw_text += f"\n{im_start}user\n{query}{im_end}\n{im_start}assistant\n" # now: bos_token = nl_tokens, so don't need "\n"
     else: # not support chat_format == 'raw'
         raise NotImplementedError(f"Unknown chat format {chat_format!r}")
 

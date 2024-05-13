@@ -34,7 +34,7 @@ def _load_model_processor(args):
     global load_model_and_preprocess
     load_model_and_preprocess = partial(load_model_and_preprocess,is_eval=True,device=device_map)
 
-    model, vis_processors, _ = load_model_and_preprocess("minigpt4qwen", args.model_type)
+    model, vis_processors, _ = load_model_and_preprocess("minigpt4qwen", args.model_type, llm_device_map=args.llm_device_map)
     model.load_checkpoint(args.checkpoint_path)
 
     model.llm_model.transformer.bfloat16()
@@ -59,6 +59,7 @@ def parse_args():
     parser.add_argument("-s", "--seed", type=int, default=42, help="Random seed")
     parser.add_argument("--cpu-only", action="store_true", help="Run demo with CPU only")
     parser.add_argument("--gpu_id", type=int, default=0, help="specify the gpu to load the model.")
+    parser.add_argument("--llm_device_map", type=str, default="cpu")
     args = parser.parse_args()
     return args
 
