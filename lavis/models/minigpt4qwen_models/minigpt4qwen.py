@@ -6,6 +6,8 @@ import logging
 import string
 from packaging import version
 
+from omegaconf import OmegaConf
+
 import contextlib
 
 import torch
@@ -77,6 +79,7 @@ class Minigpt4Qwen(Blip2Base):
         freeze_proj=False,
         enable_autocast=True,
         freeze_llm=True,
+        llm_device_map="cpu"
     ):
         super().__init__()
         transformers_version = version.parse(transformers.__version__)
@@ -144,8 +147,7 @@ class Minigpt4Qwen(Blip2Base):
             config=llm_config,
             cache_dir=registry.get_path("cache_root"),
             trust_remote_code=True,
-            # device_map='cuda',
-            device_map='cpu',
+            device_map=llm_device_map,
         )
         self.llm_model.transformer.gradient_checkpointing = True # 打开llm的gradient checkpointing
 
@@ -504,6 +506,23 @@ class Minigpt4Qwen(Blip2Base):
         return self._lemmatizer
 
     @classmethod
+    def from_pretrained(cls, model_type, llm_device_map="cpu"):
+        """
+        Build a pretrained model from default configuration file, specified by model_type.
+
+        Args:
+            - model_type (str): model type, specifying architecture and checkpoints.
+
+        Returns:
+            - model (nn.Module): pretrained or finetuned model, depending on the configuration.
+        """
+        model_cfg = OmegaConf.load(cls.default_config_path(model_type)).model
+        model_cfg['llm_device_map'] = llm_device_map
+        model = cls.from_config(model_cfg)
+
+        return model
+
+    @classmethod
     def from_config(cls, cfg):
         # text config
         max_txt_len = cfg.get("max_txt_len", 512)
@@ -548,6 +567,9 @@ class Minigpt4Qwen(Blip2Base):
         # freeze llm
         freeze_llm = cfg.get("freeze_llm",True)
 
+        llm_device_map = cfg.get("llm_device_map", "cpu")
+        assert llm_device_map in ['cpu', 'cuda', 'auto'], 'please set `llm_device_map` in [`cpu`,`cuda`,`auto`]'
+
         model = cls(
             vit_model=vit_model,
             img_size=img_size,
@@ -570,6 +592,7 @@ class Minigpt4Qwen(Blip2Base):
             freeze_proj=freeze_proj,
             enable_autocast=enable_autocast,
             freeze_llm=freeze_llm,
+            llm_device_map=llm_device_map,
         )
 
         model.load_checkpoint_from_config(cfg)

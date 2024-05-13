@@ -32,6 +32,7 @@ model:
 
   # path to Vicuna checkpoint
   llm_model: "ckpt/Qwen7B-chat"
+  llm_device_map: "cpu"
 
   # lora config
   get_lora: False

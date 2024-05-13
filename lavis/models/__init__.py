@@ -27,7 +27,7 @@ __all__ = [
 ]
 
 
-def load_model(name, model_type, is_eval=False, device="cpu", checkpoint=None):
+def load_model(name, model_type, is_eval=False, device="cpu", checkpoint=None,llm_device_map="cpu"):
     """
     Load supported models.
 
@@ -47,7 +47,7 @@ def load_model(name, model_type, is_eval=False, device="cpu", checkpoint=None):
         model (torch.nn.Module): model.
     """
 
-    model = registry.get_model_class(name).from_pretrained(model_type=model_type)
+    model = registry.get_model_class(name).from_pretrained(model_type=model_type,llm_device_map=llm_device_map)
 
     if checkpoint is not None:
         model.load_checkpoint(checkpoint)
@@ -56,9 +56,21 @@ def load_model(name, model_type, is_eval=False, device="cpu", checkpoint=None):
         model.eval()
 
     if device == "cpu":
-        model = model.float()
+        if llm_device_map == "auto":
+            model = model.bfloat16()
+        else:
+            model = model.float()
 
-    return model.to(device)
+    if llm_device_map != "auto":
+        return model.to(device)
+    else:
+        model.visual_encoder.to(device)
+        model.ln_vision.to(device)
+        model.Qformer.to(device)
+        model.query_tokens.data = model.query_tokens.to(device)
+        model.llm_proj.to(device)
+
+    return model
 
 
 def load_preprocess(config):
@@ -113,7 +125,7 @@ def load_preprocess(config):
     return vis_processors, txt_processors
 
 
-def load_model_and_preprocess(name, model_type, is_eval=False, device="cpu"):
+def load_model_and_preprocess(name, model_type, is_eval=False, device="cpu",llm_device_map="cpu"):
     """
     Load model and its related preprocessors.
 
@@ -135,7 +147,7 @@ def load_model_and_preprocess(name, model_type, is_eval=False, device="cpu"):
     model_cls = registry.get_model_class(name)
 
     # load model
-    model = model_cls.from_pretrained(model_type=model_type)
+    model = model_cls.from_pretrained(model_type=model_type,llm_device_map=llm_device_map)
 
     if is_eval:
         model.eval()
@@ -156,9 +168,21 @@ def load_model_and_preprocess(name, model_type, is_eval=False, device="cpu"):
         )
 
     if device == "cpu" or device == torch.device("cpu"):
-        model = model.float()
+        if llm_device_map == "auto":
+            model = model.bfloat16()
+        else:
+            model = model.float()
 
-    return model.to(device), vis_processors, txt_processors
+    if llm_device_map != "auto":
+        return model.to(device)
+    else:
+        model.visual_encoder.to(device)
+        model.ln_vision.to(device)
+        model.Qformer.to(device)
+        model.query_tokens.data = model.query_tokens.to(device)
+        model.llm_proj.to(device)
+
+    return model, vis_processors, txt_processors
 
 
 class ModelZoo:
