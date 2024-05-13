@@ -246,6 +246,10 @@ python cli_demo.py --model-type qwen14b_chat -c lavis/output/pp_14b/sft/global_s
 python cli_demo.py --model-type qwen14b_chat -c lavis/output/pp_14b/sft/global_step296/unfreeze_llm_model.pth --llm_device_map "auto"
 ```
 
+使用auto-map时的显存占用情况：
+
+![](./assets/gpustat.png)
+
 
 
 **CPU（速度极慢）:**
