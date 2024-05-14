@@ -29,6 +29,8 @@ MiniGPT4Qwen相关可以跳转到：[MiniGPT4Qwen_README.md](https://github.com/
 
 **已支持MPP-Qwen-14B模型在2张RTX4090 24GB上预训练和6张RTX4090 24GB上sft的deepspeed流水线并行训练！**
 
+你可以使用`automap_inference.ipynb`([link](https://github.com/Coobiw/MiniGPT4Qwen/blob/master/automap_inference.ipynb))来做简单的推理！
+
 ![](./assets/framework2.png)
 ========
 ![](./assets/new_demo1.jpg)
