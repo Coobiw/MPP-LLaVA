@@ -54,6 +54,8 @@ MiniGPT4Qwen相关可以跳转到：[MiniGPT4Qwen_README.md](https://github.com/
 
 然后你就可以使用`automap_inference.ipynb`快速尝试对话了！
 
+记得修改`checkpoint_path`到你下载的百度网盘sft权重的路径哦
+
 ## Introduction
 
 去年11月发布的[LLaVA1.5](https://github.com/haotian-liu/LLaVA)，用可以接受的数据量（558K Pretrain + 665K SFT），以Vicuna-v1.5-13B为基座，得到了非常好的性能。后续被学术界和工业界广泛follow。
