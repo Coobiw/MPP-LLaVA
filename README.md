@@ -31,6 +31,12 @@ MiniGPT4Qwen相关可以跳转到：[MiniGPT4Qwen_README.md](https://github.com/
 
 你可以使用`automap_inference.ipynb`([link](https://github.com/Coobiw/MiniGPT4Qwen/blob/master/automap_inference.ipynb))来做简单的推理！
 
+**sft后的权重（百度网盘）：**
+
+- 链接: https://pan.baidu.com/s/1Jy_zlQTBfSd9WmqZFFkBAg?pwd=0930 
+
+- 提取码: 0930 
+
 ![](./assets/framework2.png)
 ========
 ![](./assets/new_demo1.jpg)
@@ -66,7 +72,7 @@ MiniGPT4Qwen相关可以跳转到：[MiniGPT4Qwen_README.md](https://github.com/
 
 ## TODO LIST
 - [x] 支持model parallelism的推理（使用了transformers的`device_map="auto"`）
-- [ ] 开源sft权重（huggingface或百度网盘）
+- [x] 开源sft权重（huggingface或百度网盘）
 - [x] 开源pretrain权重
 - [x] 开源处理好的pretrain和sft的数据集json文件
 - [x] 开源pretrain和sft代码和config
@@ -145,6 +151,11 @@ unzip ckpt-and-data.zip
 │   │   ├── Qwen-14B-chat
 ```
 
+4. **sft后的权重（百度网盘）：**
+
+- 链接: https://pan.baidu.com/s/1Jy_zlQTBfSd9WmqZFFkBAg?pwd=0930 
+
+- 提取码: 0930 
 
 ## 训练
 
