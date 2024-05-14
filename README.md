@@ -1,5 +1,6 @@
 
-- [MPP-Qwen14B](#mpp-qwen14b)
+- [MPP-Qwen14B](#mpp-qwen14b) 
+  - [Quick Start](#quick-start)
   - [Introduction](#introduction)
   - [附属项目](#附属项目)
   - [所需计算资源](#所需计算资源)
@@ -29,8 +30,6 @@ MiniGPT4Qwen相关可以跳转到：[MiniGPT4Qwen_README.md](https://github.com/
 
 **已支持MPP-Qwen-14B模型在2张RTX4090 24GB上预训练和6张RTX4090 24GB上sft的deepspeed流水线并行训练！**
 
-你可以使用`automap_inference.ipynb`([link](https://github.com/Coobiw/MiniGPT4Qwen/blob/master/automap_inference.ipynb))来做简单的推理！
-
 **sft后的权重（百度网盘）：**
 
 - 链接: https://pan.baidu.com/s/1Jy_zlQTBfSd9WmqZFFkBAg?pwd=0930 
@@ -44,6 +43,16 @@ MiniGPT4Qwen相关可以跳转到：[MiniGPT4Qwen_README.md](https://github.com/
 ![](./assets/new_demo2.jpg)
 ======
 ![](./assets/new_demo3.jpg)
+
+
+
+## Quick Start
+
+你可以使用`automap_inference.ipynb`([link](https://github.com/Coobiw/MiniGPT4Qwen/blob/master/automap_inference.ipynb))来做简单的推理！
+
+准备的权重文件参考：[模型下载](#模型下载)部分，以及百度网盘中的sft文件即可
+
+然后你就可以使用`automap_inference.ipynb`快速尝试对话了！
 
 ## Introduction
 
