@@ -42,9 +42,10 @@ MiniGPT4Qwen相关可以跳转到：[MiniGPT4Qwen_README.md](https://github.com/
 ======
 ![](./assets/new_demo2.jpg)
 ======
-![](./assets/new_demo3.jpg)
-
-
+![](./assets/new_demo4.jpg)
+======
+![](./assets/new_demo5.jpg)
+======
 
 ## Quick Start
 
@@ -327,6 +328,27 @@ python webui_demo.py -c xxxxxx --model-type qwen14b_chat --cpu-only # 如果显�
 ![](./assets/new_demo2.jpg)
 ======
 ![](./assets/new_demo3.jpg)
+======
+![](./assets/new_demo4.jpg)
+======
+![](./assets/new_demo5.jpg)
+
+## Really Interesting Case(compared with GPT-4o)
+Our model:
+![](./assets/interesting_case1.png)
+
+GPT-4o:
+![](./assets/interesting_case1_gpt.png)
+
+Our model:
+![](./assets/interesting_case2.png)
+
+GPT-4o:
+![](./assets/interesting_case2_gpt.png)
+
+可以看出，我们的模型主要基于一些“常识”，如：猫大概率是该趴在地上的，所以总认为趴在地上的是真猫
+
+而GPT-4o这种更强大的模型，会更基于视觉上的毛的纹理以及眼睛，来判断是否为living cat，很有意思的cases！
 
 ## Acknowledgement
 
