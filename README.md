@@ -19,6 +19,7 @@
     - [运行命令行demo](#运行命令行demo)
     - [运行gradio webui demo](#运行gradio-webui-demo)
   - [MPP-Qwen14B对话示例](#mpp-qwen14b对话示例)
+  - [Really Interesting Case(compared with GPT-4o)](#really-interesting_case(compared_with_gpt-4o))
   - [Acknowledgement](#acknowledgement)
   - [License](#license)
 
@@ -322,7 +323,6 @@ python webui_demo.py -c xxxxxx --model-type qwen14b_chat --cpu-only # 如果显�
 ```
 
 ## MPP-Qwen14B对话示例
-========
 ![](./assets/new_demo1.jpg)
 ======
 ![](./assets/new_demo2.jpg)
