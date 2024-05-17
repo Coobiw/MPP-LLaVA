@@ -24,7 +24,7 @@ timm==0.4.12
 torch==2.0.1
 torchvision==0.15.2
 tqdm
-transformers>=4.33.0
+transformers==4.39.2
 webdataset
 wheel
 accelerate

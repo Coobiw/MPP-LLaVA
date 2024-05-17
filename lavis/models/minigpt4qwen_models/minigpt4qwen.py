@@ -384,7 +384,7 @@ class Minigpt4Qwen(Blip2Base):
             return_dict_in_generate=False,
             generation_config=generation_config,
             pad_token_id=self.llm_tokenizer.eod_id,
-            # bos_token_id=self.llm_tokenizer('\n').input_ids[0], # 我发现规定inputs_embeds，指定bos_token_id好像没用？
+            bos_token_id=self.llm_tokenizer('\n').input_ids[0], # 我发现规定inputs_embeds，指定bos_token_id好像没用？
             eos_token_id=[self.llm_tokenizer.im_end_id,self.llm_tokenizer.im_start_id],
         )
         if not chat:
