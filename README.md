@@ -338,13 +338,13 @@ Our model:
 ![](./assets/interesting_case1.png)
 
 GPT-4o:
-![](./assets/interesting_case1_gpt.png)
+![](./assets/interesting_case1_gpt4.png)
 
 Our model:
 ![](./assets/interesting_case2.png)
 
 GPT-4o:
-![](./assets/interesting_case2_gpt.png)
+![](./assets/interesting_case2_gpt4.png)
 
 可以看出，我们的模型主要基于一些“常识”，如：猫大概率是该趴在地上的，所以总认为趴在地上的是真猫
 
