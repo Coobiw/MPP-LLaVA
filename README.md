@@ -29,6 +29,8 @@ MiniGPT4Qwen相关可以跳转到：[MiniGPT4Qwen_README.md](https://github.com/
 # MPP-Qwen14B
 知乎博客：[https://zhuanlan.zhihu.com/p/687106694](https://zhuanlan.zhihu.com/p/687106694)
 
+多卡推理以及chatml模板知乎博客：https://zhuanlan.zhihu.com/p/698549757
+
 **已支持MPP-Qwen-14B模型在2张RTX4090 24GB上预训练和6张RTX4090 24GB上sft的deepspeed流水线并行训练！**
 
 **sft后的权重（百度网盘）：**
