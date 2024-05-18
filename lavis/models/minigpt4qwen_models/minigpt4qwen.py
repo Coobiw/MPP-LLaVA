@@ -149,7 +149,8 @@ class Minigpt4Qwen(Blip2Base):
             trust_remote_code=True,
             device_map=llm_device_map,
         )
-        self.llm_model.transformer.gradient_checkpointing = True # 打开llm的gradient checkpointing
+        # self.llm_model.transformer.gradient_checkpointing = True # 错误用法：打开llm的gradient checkpointing 
+        self.llm_model.gradient_checkpointing_enable() # 正确用法：打开llm的gradient checkpointing 会定义_gradient_checkpointing_func的！！！
 
         self.llm_tokenizer.pad_token_id = self.llm_tokenizer.eod_id
         self.replace_image_token_id = self.llm_tokenizer("<|extra_0|>").input_ids[0]
