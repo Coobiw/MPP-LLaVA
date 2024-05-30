@@ -174,7 +174,7 @@ def load_model_and_preprocess(name, model_type, is_eval=False, device="cpu",llm_
             model = model.float()
 
     if llm_device_map != "auto":
-        return model.to(device)
+        return model.to(device), vis_processors, txt_processors
     else:
         model.visual_encoder.to(device)
         model.ln_vision.to(device)
