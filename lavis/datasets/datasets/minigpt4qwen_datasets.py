@@ -18,7 +18,10 @@ class Minigpt4QwenDataset(BaseDataset):
         num_answers = []
 
         for sample in samples:
-            image_list.append(sample["image"])
+            if isinstance(sample['image'],list):
+                image_list.extend(sample['image'])
+            else:
+                image_list.append(sample["image"])
             conversation_list.append(sample["conversations"])
 
         return {

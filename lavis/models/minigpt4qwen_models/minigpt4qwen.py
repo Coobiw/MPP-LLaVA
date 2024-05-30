@@ -263,11 +263,17 @@ class Minigpt4Qwen(Blip2Base):
                         content.replace(self.replace_image_string,"")
 
                     if "<ImageHere>" in content and role == '<|im_start|>user':
-                        img_visit_cnt += 1
-                        assert len(content.split("<ImageHere>")) == 2, 'Only support one image in one sentence'
-                        c_before, c_after = content.split("<ImageHere>")
+                        # img_visit_cnt += 1
+                        # assert len(content.split("<ImageHere>")) == 2, 'Only support one image in one sentence'
+                        # c_before, c_after = content.split("<ImageHere>")
+                        # _input_id = tokenizer(role).input_ids + nl_tokens + \
+                        #     tokenizer(c_before).input_ids + [self.replace_image_token_id] * image_len + tokenizer(c_after).input_ids + [im_end] + nl_tokens
+
+                        # 支持多图/视频输入
+                        img_visit_cnt += content.count("<ImageHere>")
+                        content = content.replace("<ImageHere>", self.replace_image_string * image_len)
                         _input_id = tokenizer(role).input_ids + nl_tokens + \
-                            tokenizer(c_before).input_ids + [self.replace_image_token_id] * image_len + tokenizer(c_after).input_ids + [im_end] + nl_tokens
+                                tokenizer(content).input_ids + [im_end] + nl_tokens
                     else:
                         _input_id = tokenizer(role).input_ids + nl_tokens + \
                             tokenizer(content).input_ids + [im_end] + nl_tokens
@@ -280,8 +286,8 @@ class Minigpt4Qwen(Blip2Base):
                     else:
                         raise NotImplementedError
                     target += _target
-                assert img_visit_cnt == 1, f'Only support one image in conversations and must be at the first sentence, but get {img_visit_cnt} visits'
-                assert len(input_id) == len(target)
+                # assert img_visit_cnt == 1, f'Only support one image in conversations and must be at the first sentence, but get {img_visit_cnt} visits'
+                assert len(input_id) == len(target), "input_ids should have the same length as the target"
                 input_id += [tokenizer.pad_token_id] * (max_len - len(input_id))
                 target += [IGNORE_TOKEN_ID] * (max_len - len(target))
                 input_ids.append(input_id[:max_len])
@@ -356,14 +362,17 @@ class Minigpt4Qwen(Blip2Base):
 
         # For video data
         if image.dim() == 5:
-            assert False, 'the dim of image is 5, but now we don\'t support video input'
+            assert False, 'the dim of image is 5, but now we don\'t support 5D images/video input'
         elif image.dim() == 4:
             inputs_llm = self.encode_image(image)
         else:
             assert False,f'the dim of image is {image.dim()}, we only support image input with a shape [B,C,H,W].'
 
         for i in range(bs):
-            assert len(text[i].split('<ImageHere>')) == 2, f'must be one and only image !,now split_length = {len(text[i].split("<ImageHere>"))}'
+            # assert len(text[i].split('<ImageHere>')) == 2, f'must be one and only image !,now split_length = {len(text[i].split("<ImageHere>"))}'
+            image_num = text[i].count("<ImageHere>")
+            if image_num:
+                print(f"In Batch_{i} Query: {image_num} images!")
             replace_string = ''.join([self.replace_image_string] * self.num_query_token)
             if self.replace_image_string in text[i]:
                 text[i].replace(self.replace_image_string,"")
