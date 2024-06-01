@@ -37,3 +37,6 @@ deepspeed
 
 # gradio
 gradio==3.50.2
+
+# video
+moviepy
