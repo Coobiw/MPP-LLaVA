@@ -41,14 +41,29 @@ class InstructionDataset(Minigpt4QwenDataset, __DisplMixin):
         image = Image.open(image_path).convert("RGB")
 
         image = self.vis_processor(image)
-        instruction = self.text_processor(ann['instruction'])
+        if isinstance(ann['instruction'],list):
+            instructions = ann['instruction']
+            outputs = ann['output']
+            conversations = []
+            for turn_i, instruction in instructions:
+                instruction = self.text_processor(instruction)
+                output = outputs[turn_i]
+                conversations.extend(
+                    [
+                        {"from": "user", "value":instruction},
+                        {"from": "assistant", "value": output},
+                    ]
+                )
+        else:
+            instruction = self.text_processor(ann['instruction'])
 
-        output = ann['output']
+            output = ann['output']
 
-        conversations = [
-            {"from": "user", "value":instruction},
-            {"from": "assistant", "value": output},
-        ]
+            conversations = [
+                {"from": "user", "value":instruction},
+                {"from": "assistant", "value": output},
+            ]
+            
 
         return {
             "image": image,
