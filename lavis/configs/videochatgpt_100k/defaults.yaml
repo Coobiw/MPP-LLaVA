@@ -10,5 +10,5 @@ datasets:
           url: /export/dataset/videochatgpt/videochatgpt_instruction_100k.json
           storage: dataset/videochatgpt/videochatgpt_instruction_100k.json
       images:
-          storage: dataset/llava_instruct/coco/train2017
+          storage: dataset/videochatgpt/videochatgpt_tune
       max_frames: 32
