@@ -11,6 +11,8 @@ from lavis.datasets.builders.minigpt4qwen_builder import (
     LlavaInstructionBuilder,
     LlavaPretrainBuilder,
     LlavaInstuct100KBuilder,
+    LlavaInstuct156KBuilder,
+    VideoChatgpt100KBuilder,
 )
 
 from lavis.common.registry import registry
@@ -20,6 +22,8 @@ __all__ = [
     "LlavaInstructionBuilder",
     "LlavaPretrainBuilder",
     "LlavaInstuct100KBuilder",
+    "LlavaInstuct156KBuilder",
+    "VideoChatgpt100KBuilder",
 ]
 
 
