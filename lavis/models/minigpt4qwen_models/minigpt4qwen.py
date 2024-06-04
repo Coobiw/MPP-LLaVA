@@ -271,7 +271,7 @@ class Minigpt4Qwen(Blip2Base):
 
                         # 支持多图/视频输入
                         img_visit_cnt += content.count("<ImageHere>")
-                        content = content.replace("<Img><ImageHere></Img>", '<Img>'+self.replace_image_string * image_len + '</Img>')
+                        content = content.replace("<ImageHere>", self.replace_image_string * image_len)
                         _input_id = tokenizer(role).input_ids + nl_tokens + \
                                 tokenizer(content).input_ids + [im_end] + nl_tokens
                     else:
