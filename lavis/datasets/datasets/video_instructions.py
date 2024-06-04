@@ -11,6 +11,8 @@ from lavis.datasets.datasets.minigpt4qwen_datasets import Minigpt4QwenDataset
 from moviepy.editor import VideoFileClip
 import cv2
 
+import random
+
 class __DisplMixin:
     def displ_item(self, index):
         sample, ann = self.__getitem__(index), self.annotation[index]
@@ -72,41 +74,45 @@ class VideoInstructionDataset(Minigpt4QwenDataset):
         self._add_instance_ids()
 
     def __getitem__(self, index):
-        ann = self.annotation[index]
+        try:
+            ann = self.annotation[index]
 
-        video_path = os.path.join(self.vis_root,ann['video'])
-        images = extract_frames(video_path,num_frames=self.max_frames)
+            video_path = os.path.join(self.vis_root,ann['video'])
+            images = extract_frames(video_path,num_frames=self.max_frames)
 
-        processed_frames = [self.vis_processor(image) for image in images]
-        num_frames = len(images)
+            processed_frames = [self.vis_processor(image) for image in images]
+            num_frames = len(images)
 
-        # support multi-turn instruction tuning
-        if isinstance(ann['instruction'],list):
-            instructions = ann['instruction']
-            outputs = ann['output']
-            conversations = []
-            for turn_i, instruction in instructions:
-                instruction = self.text_processor(instruction)
+            # support multi-turn instruction tuning
+            if isinstance(ann['instruction'],list):
+                instructions = ann['instruction']
+                outputs = ann['output']
+                conversations = []
+                for turn_i, instruction in instructions:
+                    instruction = self.text_processor(instruction)
+                    instruction = instruction.replace("<Img><ImageHere></Img>","<Img>"+"<ImageHere>"*num_frames+"</Img>")
+                    output = outputs[turn_i]
+                    conversations.extend(
+                        [
+                            {"from": "user", "value":instruction},
+                            {"from": "assistant", "value": output},
+                        ]
+                    )
+            else:
+                instruction = self.text_processor(ann['instruction'])
                 instruction = instruction.replace("<Img><ImageHere></Img>","<Img>"+"<ImageHere>"*num_frames+"</Img>")
-                output = outputs[turn_i]
-                conversations.extend(
-                    [
-                        {"from": "user", "value":instruction},
-                        {"from": "assistant", "value": output},
-                    ]
-                )
-        else:
-            instruction = self.text_processor(ann['instruction'])
-            instruction = instruction.replace("<Img><ImageHere></Img>","<Img>"+"<ImageHere>"*num_frames+"</Img>")
 
-            output = ann['output']
+                output = ann['output']
 
-            conversations = [
-                {"from": "user", "value":instruction},
-                {"from": "assistant", "value": output},
-            ]
+                conversations = [
+                    {"from": "user", "value":instruction},
+                    {"from": "assistant", "value": output},
+                ]
 
-        return {
-            "image": processed_frames,
-            "conversations": conversations,
-        }
+            return {
+                "image": processed_frames,
+                "conversations": conversations,
+            }
+        except Exception as e:
+            print(f"Error loading data at index {index}: {e}")
+            return self.__getitem__(random.randint(0,self.__len__()-1))  
