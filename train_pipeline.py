@@ -216,7 +216,7 @@ def main():
     all_loss = 0.0
 
     if is_main_process():
-        wandb.init(project="MPP-Qwen14B")
+        wandb.init(project="MPP-Qwen")
     
     for epoch in range(cfg.run_cfg.max_epoch):
         sampler.set_epoch(epoch)
