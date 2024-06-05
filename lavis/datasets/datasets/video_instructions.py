@@ -88,7 +88,7 @@ class VideoInstructionDataset(Minigpt4QwenDataset):
                 instructions = ann['instruction']
                 outputs = ann['output']
                 conversations = []
-                for turn_i, instruction in instructions:
+                for turn_i, instruction in enumerate(instructions):
                     instruction = self.text_processor(instruction)
                     instruction = instruction.replace("<Img><ImageHere></Img>","<Img>"+"<ImageHere>"*num_frames+"</Img>")
                     output = outputs[turn_i]
