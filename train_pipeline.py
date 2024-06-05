@@ -190,7 +190,7 @@ def main():
                 datasets['train'],
                 num_replicas=engine.dp_world_size,
                 rank=engine.mpu.get_data_parallel_rank(),
-                shuffle=False
+                shuffle=True
             )
     # print_string = f'GPU{cfg.run_cfg.gpu}\t' + f'rank{engine.mpu.get_data_parallel_rank()}'
     # os.system(f'echo {print_string}')
