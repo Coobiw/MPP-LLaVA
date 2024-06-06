@@ -52,7 +52,7 @@ def extract_frames(video_path, num_frames):
     cap.release()
 
     if len(images) ==0:
-        print("Video not found",video_path)
+        raise AssertionError(f"Video not found: {video_path}")
     
     return images
 

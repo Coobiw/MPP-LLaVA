@@ -90,9 +90,9 @@ run:
   deepspeed_config:
     # global batch = 128 = n_ranks * grad_acc_steps * micro_batch_size = (4//2) * 64 * 1
     # 8 x 3090
-    # pp=4 dp=2 nproc=pp*dp=8 
-    gradient_accumulation_steps: 32 # 128 // dp(=2) // bs_per_gpu(=2) = 32
-    train_micro_batch_size_per_gpu: 2
+    # pp=8 dp=1 nproc=pp*dp=8 
+    gradient_accumulation_steps: 128 # 128 // dp(=1) // bs_per_gpu(=1) = 32
+    train_micro_batch_size_per_gpu: 1
 
     gradient_clipping: 1.
     steps_per_print: 10
@@ -119,10 +119,10 @@ run:
             weight_decay: 0.
 
     zero_optimization:
-        stage: 1
-        offload_optimizer:
-          device: "cpu"
-          pin_memory: true
+        stage: 0
+        # offload_optimizer:
+        #   device: "cpu"
+        #   pin_memory: true
         allgather_partitions: true
         allgather_bucket_size: 2e8
         overlap_comm: true
