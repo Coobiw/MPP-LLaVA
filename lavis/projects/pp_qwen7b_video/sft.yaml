@@ -91,7 +91,7 @@ run:
     # global batch = 128 = n_ranks * grad_acc_steps * micro_batch_size = (4//2) * 64 * 1
     # 8 x 3090
     # pp=8 dp=1 nproc=pp*dp=8 
-    gradient_accumulation_steps: 128 # 128 // dp(=1) // bs_per_gpu(=1) = 32
+    gradient_accumulation_steps: 128 # 128 // dp(=1) // bs_per_gpu(=1) = 128
     train_micro_batch_size_per_gpu: 1
 
     gradient_clipping: 1.
