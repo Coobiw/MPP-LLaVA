@@ -45,7 +45,7 @@ class InstructionDataset(Minigpt4QwenDataset, __DisplMixin):
             instructions = ann['instruction']
             outputs = ann['output']
             conversations = []
-            for turn_i, instruction in instructions:
+            for turn_i, instruction in enumerate(instructions):
                 instruction = self.text_processor(instruction)
                 output = outputs[turn_i]
                 conversations.extend(

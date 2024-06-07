@@ -5,6 +5,7 @@ import contextlib
 
 import torch
 import torch.nn as nn
+from torch.utils.checkpoint import checkpoint
 
 import transformers
 
@@ -147,9 +148,23 @@ class QwenBlockPipeLayer(torch.nn.Module):
     def forward(self, ipt):
         inputs_embeds, attention_mask, targets, rotary_pos_emb_list, position_ids, output_shape = ipt
         # print("grad: ", inputs_embeds.requires_grad)
-        inputs_embeds = self.layer(inputs_embeds, rotary_pos_emb_list=[[rotary_pos_emb_list[0],rotary_pos_emb_list[1]]],
-                    attention_mask=attention_mask,
-                    head_mask=None)[0]
+
+        # support grad-ckpt
+        inputs_embeds = checkpoint(
+            self.layer,
+            inputs_embeds,
+            [[rotary_pos_emb_list[0],rotary_pos_emb_list[1]]],
+            None,
+            attention_mask,
+            None,
+        )[0]
+
+        # inputs_embeds = self.layer(
+        #     inputs_embeds,
+        #     rotary_pos_emb_list=[[rotary_pos_emb_list[0],rotary_pos_emb_list[1]]],
+        #     attention_mask=attention_mask,
+        #     head_mask=None,
+        # )[0]
         return inputs_embeds, attention_mask, targets, rotary_pos_emb_list, position_ids, output_shape
 
 

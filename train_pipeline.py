@@ -90,7 +90,10 @@ def collate_fn_minigpt4qwen(batch,preprocess_func,freeze_llm=True,dtype=torch.fl
     image_list, conversation_list = [], []
 
     for sample in batch:
-        image_list.append(sample["image"])
+        if isinstance(sample['image'],list):
+            image_list.extend(sample['image'])
+        else:
+            image_list.append(sample["image"])
         conversation_list.append(sample["conversations"])
 
     new_batch = \
@@ -187,7 +190,7 @@ def main():
                 datasets['train'],
                 num_replicas=engine.dp_world_size,
                 rank=engine.mpu.get_data_parallel_rank(),
-                shuffle=False
+                shuffle=True
             )
     # print_string = f'GPU{cfg.run_cfg.gpu}\t' + f'rank{engine.mpu.get_data_parallel_rank()}'
     # os.system(f'echo {print_string}')
@@ -216,7 +219,7 @@ def main():
     all_loss = 0.0
 
     if is_main_process():
-        wandb.init(project="MBPP-Qwen14B")
+        wandb.init(project="MPP-Qwen")
     
     for epoch in range(cfg.run_cfg.max_epoch):
         sampler.set_epoch(epoch)

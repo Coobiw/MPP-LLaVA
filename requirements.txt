@@ -33,7 +33,14 @@ tiktoken==0.5.1
 transformers_stream_generator
 
 # deepspeed
-deepspeed
+deepspeed==0.13.5
 
 # gradio
 gradio==3.50.2
+
+# video
+moviepy
+
+# wandb
+wandb==0.17.0
+protobuf==3.19.1
