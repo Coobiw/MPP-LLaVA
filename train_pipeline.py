@@ -52,6 +52,7 @@ def parse_args():
 
     parser.add_argument("--cfg-path", required=True, help="path to configuration file.")
     parser.add_argument("--num-stages",type=int,default=0)
+    parser.add_argument("--llm-grad-ckpt", default=True, action="store_false")
     parser.add_argument(
         "--options",
         nargs="+",
@@ -171,7 +172,7 @@ def main():
     
     assert args.num_stages > 1, f'pipeline parallel need stages more than 1, current num_stages is {args.num_stages}'
 
-    model = PipelineModule(layers=get_model(model,freeze_llm=freeze_llm), num_stages=args.num_stages, partition_method='uniform')# if freeze_llm else 'parameters')
+    model = PipelineModule(layers=get_model(model,freeze_llm=freeze_llm,llm_grad_ckpt=args.llm_grad_ckpt), num_stages=args.num_stages, partition_method='uniform')# if freeze_llm else 'parameters')
 
     print_string = f'GPU{cfg.run_cfg.gpu}\t' + f'Trainable Params: {sum([param.numel() for _, param in model.named_parameters() if param.requires_grad])}'
     os.system(f'echo {print_string}')

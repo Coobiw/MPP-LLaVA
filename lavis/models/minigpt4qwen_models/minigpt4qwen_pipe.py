@@ -140,31 +140,33 @@ class TokenizerPipeLayer(nn.Module):
         return inputs_embeds, attention_mask, targets, rotary_pos_emb_list, position_ids, output_shape
 
 class QwenBlockPipeLayer(torch.nn.Module):
-    def __init__(self, model: Minigpt4Qwen, layer_idx):
+    def __init__(self, model: Minigpt4Qwen, layer_idx, llm_grad_ckpt):
         super().__init__()
         self.layer = model.llm_model.transformer.h[layer_idx]
         self.layer_idx = layer_idx
+        self.llm_grad_ckpt = llm_grad_ckpt
 
     def forward(self, ipt):
         inputs_embeds, attention_mask, targets, rotary_pos_emb_list, position_ids, output_shape = ipt
         # print("grad: ", inputs_embeds.requires_grad)
 
         # support grad-ckpt
-        inputs_embeds = checkpoint(
-            self.layer,
-            inputs_embeds,
-            [[rotary_pos_emb_list[0],rotary_pos_emb_list[1]]],
-            None,
-            attention_mask,
-            None,
-        )[0]
-
-        # inputs_embeds = self.layer(
-        #     inputs_embeds,
-        #     rotary_pos_emb_list=[[rotary_pos_emb_list[0],rotary_pos_emb_list[1]]],
-        #     attention_mask=attention_mask,
-        #     head_mask=None,
-        # )[0]
+        if self.llm_grad_ckpt:
+            inputs_embeds = checkpoint(
+                self.layer,
+                inputs_embeds,
+                [[rotary_pos_emb_list[0],rotary_pos_emb_list[1]]],
+                None,
+                attention_mask,
+                None,
+            )[0]
+        else:
+            inputs_embeds = self.layer(
+                inputs_embeds,
+                rotary_pos_emb_list=[[rotary_pos_emb_list[0],rotary_pos_emb_list[1]]],
+                attention_mask=attention_mask,
+                head_mask=None,
+            )[0]
         return inputs_embeds, attention_mask, targets, rotary_pos_emb_list, position_ids, output_shape
 
 
@@ -230,10 +232,10 @@ class IndentityPipeLayer(nn.Module):
         inputs_embeds, attention_mask, targets, rotary_pos_emb_list, position_ids, output_shape = ipt
         return inputs_embeds, attention_mask, targets, rotary_pos_emb_list, position_ids, output_shape
 
-def get_model(model,freeze_llm):
+def get_model(model, freeze_llm, llm_grad_ckpt):
     layers = [LayerSpec(TokenizerPipeLayer,model=model),
             *[LayerSpec(IndentityPipeLayer,model=model) for _ in range(4)], # 调节控制多卡的显存分配
-            *[LayerSpec(QwenBlockPipeLayer, model=model, layer_idx=idx) for idx in
+            *[LayerSpec(QwenBlockPipeLayer, model=model, layer_idx=idx, llm_grad_ckpt=llm_grad_ckpt) for idx in
                 range(model.llm_model.transformer.config.num_hidden_layers)],
             LayerSpec(FLNPipeLayer, model=model),
             LayerSpec(LMPipeLayer, model=model),
