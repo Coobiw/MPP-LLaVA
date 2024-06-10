@@ -251,7 +251,7 @@ def main():
                     response, history = model.chat(query, history=history, image_tensor=image_tensor, generation_config=generation_config)
             _clear_screen()
             print(f"\nUser: {query}")
-            print(f"\nQwen-Chat: {response}")
+            print(f"\nMPP-Qwen: {response}")
         except KeyboardInterrupt:
             print('[WARNING] Generation interrupted')
             continue
