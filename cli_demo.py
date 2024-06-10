@@ -109,22 +109,28 @@ def _get_input() -> str:
         print('[ERROR] Query is empty')
 
 def _get_image_input():
+    images, messages = [], []
     while True:
         try:
-            message = input('Please input the path of image:> ')
+            message = input('Please input the path of images (你可以输入多张图片路径，以进行多图推理，可以用`:f`结束输入，进入对话环节！):> ')
         except UnicodeDecodeError:
             print('[ERROR] Encoding error in input')
             continue
         except KeyboardInterrupt:
             exit(1)
         if message:
+            if message == ":f":
+                print("[Finished] You've finished to input the images!")
+                return images, messages
             try:
                 image = Image.open(message).convert("RGB")
             except Exception as e:
                 print(e)
                 continue
-            return image, message
-        print('[ERROR] Query is empty')
+            images.append(image)
+            messages.append(message)
+        else:
+            print('[ERROR] Query is empty')
 
 
 
@@ -144,8 +150,8 @@ def main():
     model, vis_processors, generation_config = _load_model_processor(args)
     orig_gen_config = deepcopy(model.llm_model.generation_config)
 
-    image, image_path = _get_image_input()
-    image_tensor = vis_processors['eval'](image).unsqueeze(dim=0).to(model.device)
+    images, image_paths = _get_image_input()
+    image_tensor = torch.stack([vis_processors['eval'](image) for image in images], dim=0).to(model.device)
 
     _clear_screen()
     print(_WELCOME_MSG)
@@ -224,7 +230,7 @@ def main():
                 print(model.llm_model.generation_config)
                 continue
             elif command in ['img']:
-                print(f'[INFO] Image Path: {image_path}')
+                print(f'[INFO] Image Path: {image_paths}')
                 continue
             else:
                 # As normal query.
@@ -235,7 +241,7 @@ def main():
         try:
             if first:
                 if '<ImageHere>' not in query:
-                    query = '<Img><ImageHere></Img> ' + query
+                    query = f'<Img>{"<ImageHere>" * len(image_paths)}</Img> ' + query
                 first = False
             if args.cpu_only:
                 model.bfloat16()
