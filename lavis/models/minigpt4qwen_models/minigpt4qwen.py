@@ -350,12 +350,15 @@ class Minigpt4Qwen(Blip2Base):
 
         image = deepcopy(samples["image"])
         text = deepcopy(samples['text'])
-        bs = image.size(0)
 
         if isinstance(text, str):
-            text = [text] * bs
+            text = [text]
+            bs = 1
+        elif isinstance(text,list):
+            # assert len(text) == bs, "The number of texts must be equal to the batch size."
+            bs = len(text)
         else:
-            assert len(text) == bs, "The number of texts must be equal to the batch size."
+            raise TypeError
 
         if self.qformer_text_input:
             raise NotImplementedError
@@ -376,7 +379,7 @@ class Minigpt4Qwen(Blip2Base):
             replace_string = ''.join([self.replace_image_string] * self.num_query_token)
             if self.replace_image_string in text[i]:
                 text[i].replace(self.replace_image_string,"")
-            text[i] = text[i].replace('<Img><ImageHere></Img>','<Img>'+replace_string+'</Img>')
+            text[i] = text[i].replace('<ImageHere>',replace_string)
 
         llm_tokens = self.llm_tokenizer(text, return_tensors='pt', padding='longest')
         attention_mask = llm_tokens.attention_mask.to(image.device)
