@@ -241,7 +241,11 @@ def main():
         try:
             if first:
                 if '<ImageHere>' not in query:
-                    query = f'<Img>{"<ImageHere>" * len(image_paths)}</Img> ' + query
+                    # query = f'<Img>{"<ImageHere>" * len(image_paths)}</Img> ' + query
+                    img_query = ""
+                    for _ in image_paths:
+                        img_query += '<Img><ImageHere></Img>'
+                    query = img_query + query
                 first = False
             if args.cpu_only:
                 model.bfloat16()
