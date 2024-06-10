@@ -250,8 +250,8 @@ def main():
                 with torch.cuda.amp.autocast(enabled=True,dtype=torch.bfloat16):
                     response, history = model.chat(query, history=history, image_tensor=image_tensor, generation_config=generation_config)
             _clear_screen()
-            print(f"\nUser: {query}")
-            print(f"\nMPP-Qwen: {response}")
+            print(f"\n\033[33mUser:\033[0m {query}")
+            print(f"\n\033[31mMPP-Qwen:\033[0m {response}")
         except KeyboardInterrupt:
             print('[WARNING] Generation interrupted')
             continue
