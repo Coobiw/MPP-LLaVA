@@ -125,6 +125,7 @@ def gradio_reset(history, img_list):
            gr.update(value=None, interactive=True, visible=False), \
            gr.update(placeholder='Please upload your image first', interactive=False), \
            gr.update(value="Upload & Start Chat", interactive=True), \
+           gr.update(value=None), \
            history, \
            img_list
 
@@ -153,7 +154,6 @@ def load_and_process_video(video_path,img_list):
         images = [vis_processor(raw_image) for raw_image in raw_images]
 
         img_list.extend(images)
-        print(len(img_list))
         msg = "Received."
         return msg
 
@@ -205,7 +205,6 @@ def upload_video(video, text_input, history, img_list, img_prefix):
     llm_message = load_and_process_video(video, img_list)
 
     img_prefix = f"<Img>{'<ImageHere>' * len(img_list)}</Img>"
-    print(img_prefix)
     return gr.update(interactive=False), \
            gr.update(interactive=True, placeholder='Type and press Enter'), \
            gr.update(value="Start Chatting", interactive=False), \
@@ -249,7 +248,7 @@ def gradio_answer(chatbot, history, img_list, do_sample,num_beams, temperature, 
     return chatbot, history, img_list
 
 title = """<h1 align="center">Demo of MPPQwen</h1>"""
-description = """<h3>This is the demo of MPPQwen, supporting single-image/multi-image/video single-turn/multi-turn conversation. Upload your images and start chatting! <br> To use
+description = """<h3>This is the demo of MPPQwen, supporting {single-image/multi-image/video} {single-turn/multi-turn} conversation. Upload your images and start chatting! <br> To use
             example questions, click example image, hit upload, and press enter in the chatbox. </h3>"""
 
 from transformers.trainer_utils import set_seed
@@ -332,13 +331,13 @@ with gr.Blocks() as demo:
     upload_button.click(upload_img, [image_single, text_input, history, img_list, img_prefix], [image_single, text_input, upload_button, history, img_list, img_prefix])
     upload_button.click(upload_video, [video, text_input, history, img_list, img_prefix], [video, text_input, upload_button, history, img_list, img_prefix])
 
-    print(list(map(type,[text_input, chatbot, img_prefix])))
-    print(list(map(type,[chatbot, history, img_list, do_sample, num_beams, temperature, top_k, top_p])))
+    # print(list(map(type,[text_input, chatbot, img_prefix])))
+    # print(list(map(type,[chatbot, history, img_list, do_sample, num_beams, temperature, top_k, top_p])))
     text_input.submit(gradio_ask, [text_input, chatbot, img_prefix], [text_input, chatbot, img_prefix]).then(
         gradio_answer, [chatbot, history, img_list, do_sample, num_beams, temperature, top_k, top_p], [chatbot, history, img_list]
     )
-    # clear.click(gradio_reset, [history, img_list], [chatbot, image, text_input, upload_button, history, img_list], queue=False)
-    clear.click(gradio_reset, [history, img_list], [chatbot, image_single, video, text_input, upload_button, history, img_list], queue=False)
+
+    clear.click(gradio_reset, [history, img_list], [chatbot, image_single, video, text_input, upload_button, mode, history, img_list], queue=False)
 
 
 
