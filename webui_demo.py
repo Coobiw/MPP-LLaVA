@@ -18,6 +18,35 @@ from lavis.models import load_model_and_preprocess
 from functools import partial
 from copy import deepcopy
 
+import cv2
+
+def extract_frames(video_path, num_frames):
+    cap = cv2.VideoCapture(video_path)
+    total_num_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    sampling_interval = int(total_num_frames / num_frames)
+        
+    if sampling_interval == 0:  # total_frames < target_frames, 逐帧提取
+        sampling_interval = 1
+
+    images = []
+    frame_count = 0
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret:
+            break
+        if frame_count % sampling_interval == 0:
+            frame = frame[:, :, ::-1]  # BGR to RGB
+            images.append(Image.fromarray(frame).convert("RGB"))
+        frame_count += 1
+        if len(images) >= num_frames:
+            break
+    cap.release()
+
+    if len(images) == 0:
+        raise AssertionError(f"Video not found or no frames extracted: {video_path}")
+
+    return images
+
 def disable_torch_init():
     """
     Disable the redundant torch default initialization to accelerate model creation.
@@ -92,31 +121,50 @@ def gradio_reset(history, img_list):
     if img_list is not None:
         img_list = []
     return None, \
-        gr.update(value=None, interactive=True), \
-        gr.update(placeholder='Please upload your image first', interactive=False),\
-        gr.update(value="Upload & Start Chat", interactive=True), \
-        history, \
-        img_list
+           gr.update(value=None, interactive=True, visible=True), \
+           gr.update(value=None, interactive=True, visible=False), \
+           gr.update(placeholder='Please upload your image first', interactive=False), \
+           gr.update(value="Upload & Start Chat", interactive=True), \
+           history, \
+           img_list
 
-def upload_img(gr_img, text_input, history, img_list, img_prefix):
-    def load_and_process_img(image,img_list):
+
+def load_and_process_img(image,img_list):
         if isinstance(image, str):  # is a image path
             raw_image = Image.open(image).convert('RGB')
-            image = vis_processor(raw_image).unsqueeze(0).to(device)
+            image = vis_processor(raw_image)
         elif isinstance(image, Image.Image):
             raw_image = image
             raw_image = raw_image.convert('RGB')
-            image = vis_processor(raw_image).unsqueeze(0).to(device)
+            image = vis_processor(raw_image)
         elif isinstance(image, torch.Tensor):
             if len(image.shape) == 3:
-                image = image.unsqueeze(0)
-            image = image.to(device)
+                image = image
+            else:
+                assert False, "the `image.ndim` must be 3"
 
         img_list.append(image)
         msg = "Received."
         return msg
+
+def load_and_process_video(video_path,img_list):
+        assert isinstance(video_path, str), "Input must be a path of video"
+        raw_images = extract_frames(video_path, num_frames=32) # hard-code the `num_frames`(32)
+        images = [vis_processor(raw_image) for raw_image in raw_images]
+
+        img_list.extend(images)
+        print(len(img_list))
+        msg = "Received."
+        return msg
+
+def upload_img(gr_img, text_input, history, img_list, img_prefix):
     if gr_img is None:
-        return None, None, gr.update(interactive=True), history, None
+        return (
+            gr.update(),
+            gr.update(),
+            gr.update(),
+            history, img_list, img_prefix
+        )
 
     llm_message = load_and_process_img(gr_img, img_list)
     img_prefix = '<Img><ImageHere></Img>'
@@ -126,6 +174,44 @@ def upload_img(gr_img, text_input, history, img_list, img_prefix):
         history, \
         img_list, \
         img_prefix
+
+# def upload_imgs(gr_imgs, text_input, history, img_list, img_prefix):
+#     if gr_imgs is None:
+#         return (
+#             gr.update(),
+#             gr.update(),
+#             gr.update(),
+#             history, img_list, img_prefix
+#         )
+#     for gr_img in gr_imgs:
+#         llm_message = load_and_process_img(gr_img, img_list)
+#     img_prefix = '<Img>' + '<ImageHere>' * len(gr_imgs) + '</Img>'
+#     return gr.update(interactive=False), \
+#            gr.update(interactive=True, placeholder='Type and press Enter'), \
+#            gr.update(value="Start Chatting", interactive=False), \
+#            history, \
+#            img_list, \
+#            img_prefix
+
+def upload_video(video, text_input, history, img_list, img_prefix):
+    # Add your video processing logic here
+    if video is None:
+        return (
+            gr.update(),
+            gr.update(),
+            gr.update(),
+            history, img_list, img_prefix
+        )
+    llm_message = load_and_process_video(video, img_list)
+
+    img_prefix = f"<Img>{'<ImageHere>' * len(img_list)}</Img>"
+    print(img_prefix)
+    return gr.update(interactive=False), \
+           gr.update(interactive=True, placeholder='Type and press Enter'), \
+           gr.update(value="Start Chatting", interactive=False), \
+           history, \
+           img_list, \
+           img_prefix
 
 def gradio_ask(user_message, chatbot, img_prefix):
     if len(user_message) == 0:
@@ -149,7 +235,8 @@ def gradio_answer(chatbot, history, img_list, do_sample,num_beams, temperature, 
             "top_p": top_p,
         }
     )
-    image_tensor =  img_list[0]  # 如果想支持多图情况：torch.stack(img_list).to(self.device)
+    global device
+    image_tensor =  torch.stack(img_list).to(device)
     generation_config = GenerationConfig.from_dict(generation_config)
     global args
     if args.cpu_only:
@@ -161,8 +248,8 @@ def gradio_answer(chatbot, history, img_list, do_sample,num_beams, temperature, 
     chatbot[-1][1] = response
     return chatbot, history, img_list
 
-title = """<h1 align="center">Demo of MiniGPT4Qwen</h1>"""
-description = """<h3>This is the demo of MiniGPT4Qwen. Upload your images and start chatting! <br> To use
+title = """<h1 align="center">Demo of MPPQwen</h1>"""
+description = """<h3>This is the demo of MPPQwen, supporting single-image/multi-image/video single-turn/multi-turn conversation. Upload your images and start chatting! <br> To use
             example questions, click example image, hit upload, and press enter in the chatbox. </h3>"""
 
 from transformers.trainer_utils import set_seed
@@ -175,7 +262,9 @@ with gr.Blocks() as demo:
 
     with gr.Row():
         with gr.Column(scale=0.5):
-            image = gr.Image(type="pil")
+            mode = gr.Dropdown(choices=["Single Image", "Video"], label="Select Mode", value=None)
+            image_single = gr.Image(type="filepath", label="Upload Image", value=None)
+            video = gr.Video(label="Upload Video", value=None)
             upload_button = gr.Button(value="Upload & Start Chat", interactive=True, variant="primary")
             clear = gr.Button("Restart 🔄")
             do_sample = gr.components.Radio(['True', 'False'],
@@ -221,21 +310,36 @@ with gr.Blocks() as demo:
         with gr.Column():
             history = gr.State(value=[])
             img_list = gr.State(value=[])
-            chatbot = gr.Chatbot(label='MiniGPT4Qwen')
+            chatbot = gr.Chatbot(label='MPPQwen')
             img_prefix = gr.State(value="")
             text_input = gr.Textbox(label='User', placeholder='Please upload your image first', interactive=False)
 
-            gr.Examples(examples=[
-                ["examples/minigpt4_image_3.jpg", "描述下这幅图片"],
-            ], inputs=[image, text_input])
+            # gr.Examples(examples=[
+            #     ["examples/minigpt4_image_3.jpg", "描述下这幅图片"],
+            # ], inputs=[image, text_input])
 
-    upload_button.click(upload_img, [image, text_input, history,img_list, img_prefix], [image, text_input, upload_button, history, img_list, img_prefix])
+    def update_inputs(mode):
+        if mode == "Single Image":
+            return gr.update(visible=True), gr.update(visible=False)
+        elif mode == "Video":
+            return gr.update(visible=False), gr.update(visible=True)
+        else:
+            return gr.update(visible=True), gr.update(visible=True)
+
+    mode.change(update_inputs, inputs=mode, outputs=[image_single, video])
+    # print('Mode\t', mode.value)
+
+    upload_button.click(upload_img, [image_single, text_input, history, img_list, img_prefix], [image_single, text_input, upload_button, history, img_list, img_prefix])
+    upload_button.click(upload_video, [video, text_input, history, img_list, img_prefix], [video, text_input, upload_button, history, img_list, img_prefix])
 
     print(list(map(type,[text_input, chatbot, img_prefix])))
     print(list(map(type,[chatbot, history, img_list, do_sample, num_beams, temperature, top_k, top_p])))
     text_input.submit(gradio_ask, [text_input, chatbot, img_prefix], [text_input, chatbot, img_prefix]).then(
         gradio_answer, [chatbot, history, img_list, do_sample, num_beams, temperature, top_k, top_p], [chatbot, history, img_list]
     )
-    clear.click(gradio_reset, [history, img_list], [chatbot, image, text_input, upload_button, history, img_list], queue=False)
+    # clear.click(gradio_reset, [history, img_list], [chatbot, image, text_input, upload_button, history, img_list], queue=False)
+    clear.click(gradio_reset, [history, img_list], [chatbot, image_single, video, text_input, upload_button, history, img_list], queue=False)
+
+
 
 demo.launch(share=True,inbrowser=True)
