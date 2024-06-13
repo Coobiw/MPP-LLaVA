@@ -1,292 +1,89 @@
+<video width="600" controls>
+  <source src="https://github.com/Coobiw/MiniGPT4Qwen/assets/MPPQwen/Sora_Tokyo_Walk_example.MOV" type="video/quicktime">
+</video>
 
-- [MPP-Qwen14B](#mpp-qwen14b) 
-  - [Quick Start](#quick-start)
-  - [Introduction](#introduction)
-  - [附属项目](#附属项目)
-  - [所需计算资源](#所需计算资源)
-  - [TODO LIST](#todo-list)
-  - [Installation](#installation)
-  - [Getting Started](#getting-started)
-    - [模型下载](#模型下载)
-  - [训练](#训练)
-    - [数据准备](#数据准备)
-    - [数据tokens数目分析](#数据tokens数目分析)
-    - [运行train\_pipeline.py进行流水线并行训练](#运行train_pipelinepy进行流水线并行训练)
-  - [deepspeed权重转换为pth文件](#deepspeed权重转换为pth文件)
-    - [预训练阶段](#预训练阶段)
-    - [sft阶段](#sft阶段)
-  - [推理](#推理)
-    - [运行命令行demo](#运行命令行demo)
-    - [运行gradio webui demo](#运行gradio-webui-demo)
-  - [MPP-Qwen14B对话示例](#mpp-qwen14b对话示例)
-  - [Really Interesting Case(compared with GPT-4o)](#really-interesting_case(compared_with_gpt-4o))
-  - [Acknowledgement](#acknowledgement)
-  - [License](#license)
+# MPP-Qwen-Next: Multimodal Pipeline Parallel based on QwenLM
 
-似乎被爱可可老师转发了🥹，感谢大家关注！
+## News
+- [2024/6] 🔥 **MPP-Qwen-Next**: 加入llava的多轮对话sft数据以及videochatgpt的100k sft数据，*支持图像多轮对话，视频对话，并涌现出多图对话能力*
+- [2024/5] 🔥 代码支持多轮对话sft、视频sft、多图sft
+- [2024/4] 🔥 支持多卡推理，修正chat template以获得更好的对话效果 [知乎博客](https://zhuanlan.zhihu.com/p/698549757)
+- [2024/3] 🔥 **MPPQwen-14B**: Extend MiniGPT4Qwen-14B to MPP-Qwen14B(Multimodal Pipeline Parallel). 数据和训练范式参照LLaVA（pretrain + sft)，指令微调时打开LLM。*全部训练过程在6张RTX4090上完成* [README&Tutorial](https://github.com/Coobiw/MiniGPT4Qwen/blob/master/MPPQwen14B_README.md)； [知乎博客](https://zhuanlan.zhihu.com/p/687106694)
+- [2024/2] 🔥 **MiniGPT4Qwen-14B**: Scaling Up MiniGPT4Qwen to 14B. *使用DeepSpeed Pipeline Parallel让全过程仅使用2张4090显卡* [README&Tutorial](https://github.com/Coobiw/MiniGPT4Qwen/blob/master/MiniGPT4Qwen_README.md)； [知乎博客](https://zhuanlan.zhihu.com/p/684462477)
+- [2023/10] 🔥 **MiniGPT4Qwen**：采用18.8k的高质量双语指令微调数据，得到*单阶段训练的个人版双语MLLM* [README&Tutorial](https://github.com/Coobiw/MiniGPT4Qwen/blob/master/MiniGPT4Qwen_README.md)； [知乎博客](https://zhuanlan.zhihu.com/p/664612306)
 
-MiniGPT4Qwen相关可以跳转到：[MiniGPT4Qwen_README.md](https://github.com/Coobiw/MiniGPT4Qwen/blob/master/MiniGPT4Qwen_README.md)
-# MPP-Qwen14B
-知乎博客：[https://zhuanlan.zhihu.com/p/687106694](https://zhuanlan.zhihu.com/p/687106694)
+## Features
 
-多卡推理以及chatml模板知乎博客：https://zhuanlan.zhihu.com/p/698549757
+### 图像-单轮问答
+![](assets/MPPQwen/pic1.jpg)
 
-**已支持MPP-Qwen-14B模型在2张RTX4090 24GB上预训练和6张RTX4090 24GB上sft的deepspeed流水线并行训练！**
+### 图像-多轮对话
+![](assets/MPPQwen/pic2.jpg)
 
-**sft后的权重（百度网盘）：**
+### 视频-对话
+![](assets/MPPQwen/pic3.jpg)
 
-- 链接: https://pan.baidu.com/s/1Jy_zlQTBfSd9WmqZFFkBAg?pwd=0930 
+### 多图-对话（未经过多图sft，视频sft后涌现该能力）
+---
+无视频sft的MPP-14B模型多图对话（看似回答，实际啥都没说）：
+![](assets/MPPQwen/pic4.jpg)
 
-- 提取码: 0930 
+---
+视频sft后的MPPQwen-8B模型（具备比较不同图像的能力）：
+![](assets/MPPQwen/pic5.jpg)
 
-![](./assets/framework2.png)
-========
-![](./assets/new_demo1.jpg)
-======
-![](./assets/new_demo2.jpg)
-======
-![](./assets/new_demo4.jpg)
-======
-![](./assets/new_demo5.jpg)
-======
-
-## Quick Start
-
-你可以使用`automap_inference.ipynb`([link](https://github.com/Coobiw/MiniGPT4Qwen/blob/master/automap_inference.ipynb))来做简单的推理！
-
-准备的权重文件参考：[模型下载](#模型下载)部分，以及百度网盘中的sft文件即可
-
-然后你就可以使用`automap_inference.ipynb`快速尝试对话了！
-
-记得修改`checkpoint_path`到你下载的百度网盘sft权重的路径哦
-
-## Introduction
-
-去年11月发布的[LLaVA1.5](https://github.com/haotian-liu/LLaVA)，用可以接受的数据量（558K Pretrain + 665K SFT），以Vicuna-v1.5-13B为基座，得到了非常好的性能。后续被学术界和工业界广泛follow。
-
-在读过其在github上的README后发现，24GB的消费级别显卡（RTX3090、RTX4090等）仅可以完成以Vicuna-v1.5-7B为底座的训练，而且Open出的是LoRA的配置。
-
-**为了不让贫穷限制想象力**，接着MiniGPT4Qwen-14B的deepspeed流水线并行框架，推出MPP-Qwen14B（Multimodal Pipeline Parallel-Qwen14B），**全程在RTX4090 24GB上完成只训练linear层的Pretrain阶段和LLM全参数训练的SFT阶段。**
-
-## 附属项目
-- 知乎博客：[MiniGPT4Qwen-14B](https://zhuanlan.zhihu.com/p/684462477)
-- 知乎博客：[MiniGPT4Qwen](https://zhuanlan.zhihu.com/p/664612306)
-- 干净、灵活的Trainer：https://github.com/Coobiw/MiniGPT4Qwen/tree/master/lavis_trainer_cleaned
-    - 知乎：https://zhuanlan.zhihu.com/p/670572461
-
-- grad-checkpoint + amp tutorails：https://github.com/Coobiw/MiniGPT4Qwen/tree/master/amp_and_grad-checkpointing
-    - 知乎：https://zhuanlan.zhihu.com/p/671165275?
-
-- deepspeed tutorials：https://github.com/Coobiw/MiniGPT4Qwen/tree/master/deepspeed_tutorials
-    - 知乎：https://zhuanlan.zhihu.com/p/673359684
-
-
-## 所需计算资源
-- MPP-Qwen14B Pretrain：2张RTX 4090 24GB
-- MPP-Qwen14B SFT：6张RTX 4090 24GB
 
 ## TODO LIST
+- [ ] 加入huggingface-transformers实现，并push到huggingface
+- [ ] 开源sft权重（huggingface或百度网盘）
+- [x] 支持单图推理、多图推理、视频推理
 - [x] 支持model parallelism的推理（使用了transformers的`device_map="auto"`）
-- [x] 开源sft权重（huggingface或百度网盘）
 - [x] 开源pretrain权重
 - [x] 开源处理好的pretrain和sft的数据集json文件
-- [x] 开源pretrain和sft代码和config
+- [x] 支持多轮对话、多图sft、视频sft
 - [x] 支持deepspeed的流水线并行
 
 ## Installation
 
 ```bash
-conda create -n minigpt4qwen python=3.8
-conda activate minigpt4qwen
+conda create -n minigpt4qwen python=3.8 && conda activate minigpt4qwen
 pip install -e .
 ```
 
-## Getting Started
+## Weight&Data Preparation
+请放在`cache`目录中，结构如下
+![](assets/MPPQwen/pic6.jpg)
 
-### 模型下载
+模型权重请参照：[WEIGHT.md](https://github.com/Coobiw/MiniGPT4Qwen/blob/master/WEIGHT.md)
 
-> 请将模型权重下载后都放在 `cache/ckpt`下
-
-```bash
-mkdir cache
-cd cache
-mkdir ckpt
-mkdir dataset
-```
-
-1.下载BLIP2的相关权重
-
-(a) eva vit-g
-
-[eva_vit_g.pth](https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/BLIP2/eva_vit_g.pth)
-
-```bash
-wget https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/BLIP2/eva_vit_g.pth
-```
-
-(b) bert-base-uncased
-
-[huggingface](https://huggingface.co/bert-base-uncased/tree/main),下载如下的文件即可
-
-![image-20231026013454256](./assets/image-20231026013454256.png)
-
-(c) blip2_pretrained_flant5xxl
-
-[blip2_pretrained_flant5xxl.pth](https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/BLIP2/blip2_pretrained_flant5xxl.pth)
-
-```bash
-wget https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/BLIP2/blip2_pretrained_flant5xxl.pth
-```
-
-2.下载Qwen-14B-Chat的权重
-
-[Qwen-14B-chat huggingface](https://huggingface.co/Qwen/Qwen-14B-Chat)
-
-3.获得pretrain后的checkpoint（optional，如果你想直接在这上面做sft的话）
-
-(建议放入 `lavis/output/pp_14b/pretrain`)
-
-在本仓库的release里放有checkpoint，可以直接下载
-
-```bash
-wget https://github.com/Coobiw/MiniGPT4Qwen/releases/download/MPP-Qwen14B_ckpt-and-data/ckpt-and-data.zip
-unzip ckpt-and-data.zip
-```
-
-目录结构：
-
-```bash
-├── cache
-│   ├── ckpt
-│   │   ├── bert-base-uncased
-│   │   ├── blip2
-│   │   │   ├── blip2_pretrained_flant5xxl.pth
-│   │   ├── eva
-│   │   │   ├── eva_vit_g.pth
-│   │   ├── Qwen-14B-chat
-```
-
-4. **sft后的权重（百度网盘）：**
-
-- 链接: https://pan.baidu.com/s/1Jy_zlQTBfSd9WmqZFFkBAg?pwd=0930 
-
-- 提取码: 0930 
-
-## 训练
-
-### 数据准备
-
-MPP-Qwen14B使用了LLaVA的Pretrain和指令微调的数据集，所以整体数据获取流程与LLaVA仓库说明的大体一致。
-
-预训练数据：[558K subset of the LAION-CC-SBU dataset with BLIP captions](https://huggingface.co/datasets/liuhaotian/LLaVA-Pretrain)，去该huggingface链接下载`images.zip`和`blip_laion_cc_sbu_558k.json`
-
-指令微调数据：下载coco的train2017里的图片：
-```bash
-wget http://images.cocodataset.org/zips/train2017.zip
-unzip train2017.zip
-```
-
-MPP-Qwen14B format的标注json文件：在本仓库的release中([https://github.com/Coobiw/MiniGPT4Qwen/releases/tag/MPP-Qwen14B_ckpt-and-data](https://github.com/Coobiw/MiniGPT4Qwen/releases/tag/MPP-Qwen14B_ckpt-and-data)):
-```bash
-wget https://github.com/Coobiw/MiniGPT4Qwen/releases/download/MPP-Qwen14B_ckpt-and-data/ckpt-and-data.zip
-unzip ckpt-and-data.zip
-```
-
-然后按照下面的目录结构组织文件
-
-最后需要将数据集放入 `./cache/dataset`中，目录结构如下：
-
-```bash
-├── cache
-│   └── dataset
-│       ├── llava_pretrain
-│   │   │   ├── blip_laion_cc_sbu_558k
-│   │   │   |   ├── images
-│   │   │   |   ├── llava_pretrain_minigpt4qwen_format.json
-│       ├── llava_instuct
-│   │   │   ├── coco
-│   │   │   |   ├── train2017
-│   │   │   ├── llava_instruction_100k.json
-```
-
-### 数据tokens数目分析
-```bash
-python tokenize_analysis.py
-```
-
-![](./vis/Pretrain_token_distribution.png)
-======
-![](./vis/SFT_token_distribution.png)
-
-根据此，会在train的配置文件中，pretrain和sft的`max_txt_len`分别设置为256和512
-
-### 运行train_pipeline.py进行流水线并行训练
-
-Pretrain：
-
-```bash
-python -m torch.distributed.run --nproc_per_node=2 train_pipeline.py --cfg-path lavis/projects/pp_qwen14b/pretrain_pp.yaml --num-stages 2
-```
-
-SFT：
-
-```bash
-python -m torch.distributed.run --nproc_per_node=6 train_pipeline.py --cfg-path lavis/projects/pp_qwen14b/sft_100k_pp.yaml --num-stages 6
-```
-
-## deepspeed权重转换为pth文件
-
-### 预训练阶段
-
-（仅转换linear projection层）
-
-```bash
-python pipe_proj2pth.py --ckpt-dir lavis/output/pp_14b/pretrain/global_stepxxx
-```
-
-转换后，模型文件会存储在`ckpt_dir`底下，名为`model.pth`
-
-### sft阶段
-
-（需要转换projection层和所有LLM的参数）
-
-```bash
-python pipemodel2pth.py --ckpt-dir lavis/output/pp_14b/sft/global_stepxxx
-```
-
-转换后，模型文件会存储在`ckpt_dir`底下，名为`unfreeze_llm_model.pth`
+训练数据请参照：[DATA.md](https://github.com/Coobiw/MiniGPT4Qwen/blob/master/DATA.md)
 
 ## 推理
 
 ### 运行命令行demo
 
-**Single-GPU Inference（显存>=32GB才可以）:**
+**Single-GPU Inference**
 
 ```bash
-python cli_demo.py --model-type qwen14b_chat -c lavis/output/pp_14b/sft/global_step296/unfreeze_llm_model.pth
+python cli_demo.py --model-type qwen7b_chat -c lavis/output/pp_7b_video/sft_video/global_step2005/unfreeze_llm_model.pth
 ```
 
 
 
-**MultiGPU(llm使用`device_map="auto"加载`，需要两张以上GPU，加起来的显存大于32GB即可，本项目使用AutoDL的2x24GB 4090)：**
+**MultiGPU(llm使用`device_map="auto"加载`，可以多卡加载LLM部分模型：**
 
 ```bash
-python cli_demo.py --model-type qwen14b_chat -c lavis/output/pp_14b/sft/global_step296/unfreeze_llm_model.pth --llm_device_map "auto"
+python cli_demo.py --model-type qwen7b_chat -c lavis/output/pp_7b_video/sft_video/global_step2005/unfreeze_llm_model.pth --llm_device_map "auto"
 ```
 
-使用auto-map时的显存占用情况：
 
-![](./assets/gpustat.png)
-
-
-
-**CPU（速度极慢）:**
+**CPU（速度慢）:**
 
 ```bash
-python cli_demo.py -c xxxxxx --model-type qwen14b_chat --cpu-only # 如果显存足够(>32GB)可以不要--cpu-only
+python cli_demo.py--model-type qwen7b_chat -c lavis/output/pp_7b_video/sft_video/global_step2005/unfreeze_llm_model.pth --cpu-only # 如果显存足够(>=20GB)可以不要--cpu-only
 ```
 
-运行后需要输入图片路径，输入后进入对话
+运行后需要输入图片路径，可以输入多张图片，用`:f`结束图片路径输入后进入对话
 
 常见操作：
 
@@ -302,18 +99,18 @@ python cli_demo.py -c xxxxxx --model-type qwen14b_chat --cpu-only # 如果显存
 
 ### 运行gradio webui demo
 
-**Single-GPU Inference（显存>=32GB才可以）:**
+**Single-GPU Inference**
 
 ```bash
-python webui_demo.py --model-type qwen14b_chat -c lavis/output/pp_14b/sft/global_step296/unfreeze_llm_model.pth
+python webui_demo.py --model-type qwen7b_chat -c lavis/output/pp_7b_video/sft_video/global_step2005/unfreeze_llm_model.pth
 ```
 
 
 
-**MultiGPU(llm使用`device_map="auto"加载`，需要两张以上GPU，加起来的显存大于32GB即可，本项目使用AutoDL的2x24GB 4090)：**
+**MultiGPU(llm使用`device_map="auto"加载`**
 
 ```bash
-python webui_demo.py --model-type qwen14b_chat -c lavis/output/pp_14b/sft/global_step296/unfreeze_llm_model.pth --llm_device_map "auto"
+python webui_demo.py --model-type qwen7b_chat -c lavis/output/pp_7b_video/sft_video/global_step2005/unfreeze_llm_model.pth --llm_device_map "auto"
 ```
 
 
@@ -321,44 +118,115 @@ python webui_demo.py --model-type qwen14b_chat -c lavis/output/pp_14b/sft/global
 **CPU：**
 
 ```bash
-python webui_demo.py -c xxxxxx --model-type qwen14b_chat --cpu-only # 如果显存足够(>30GB)可以不要--cpu-only
+python webui_demo.py --model-type qwen7b_chat -c lavis/output/pp_7b_video/sft_video/global_step2005/unfreeze_llm_model.pth --cpu-only # 如果显存足够(>=20GB)可以不要--cpu-only
 ```
 
-## MPP-Qwen14B对话示例
-![](./assets/new_demo1.jpg)
-======
-![](./assets/new_demo2.jpg)
-======
-![](./assets/new_demo3.jpg)
-======
-![](./assets/new_demo4.jpg)
-======
-![](./assets/new_demo5.jpg)
+## 流水线并行训练(PP+DP)
+下面为8卡3090运行指令:
 
-## Really Interesting Case(compared with GPT-4o)
-Our model:
-![](./assets/interesting_case1.png)
+### Pretrain
+> nproc_per_node: 8
+> dp: 4
+> pp: 2
+> nproc_per_node = pp * dp
 
-GPT-4o:
-![](./assets/interesting_case1_gpt4.png)
+```bash
+python -m torch.distributed.run --nproc_per_node=8 train_pipeline.py --cfg-path lavis/projects/pp_qwen7b_video/pretrain.yaml --num-stages 2
+```
 
-Our model:
-![](./assets/interesting_case2.png)
+### SFT
+> nproc_per_node: 8
+> dp: 1
+> pp: 8
+> nproc_per_node = pp * dp
 
-GPT-4o:
-![](./assets/interesting_case2_gpt4.png)
+```bash
+python -m torch.distributed.run --nproc_per_node=8 train_pipeline.py --cfg-path lavis/projects/pp_qwen7b_video/sft.yaml --num-stages 8
+```
 
-可以看出，我们的模型主要基于一些“常识”，如：猫大概率是该趴在地上的，所以总认为趴在地上的是真猫
+### pipeline parallel的权重转换为pth文件
 
-而GPT-4o这种更强大的模型，会更基于视觉上的毛的纹理以及眼睛，来判断是否为living cat，很有意思的cases！
+#### 预训练阶段:
+
+（仅转换linear projection层）
+
+```bash
+python pipe_proj2pth.py --ckpt-dir lavis/output/pp_7b_video/pretrain/global_step2181
+```
+
+转换后，模型文件会存储在`ckpt_dir`底下，名为`model.pth`
+
+#### sft阶段
+
+（需要转换projection层和所有LLM的参数）
+
+```bash
+python pipemodel2pth.py --ckpt-dir lavis/output/pp_7b_video/sft_video/global_step2005
+```
+
+转换后，模型文件会存储在`ckpt_dir`底下，名为`unfreeze_llm_model.pth`
+
+## 二阶段训练loss曲线参考
+---
+
+pretrain：
+![](./assets/MPPQwen/curve1.jpg)
+
+---
+sft:
+![](./assets/MPPQwen/curve2.jpg)
+
+## Custom Data Format(如果你想continue training)
+处理函数可以参考: [https://github.com/Coobiw/MiniGPT4Qwen/releases/download/MPP-Qwen-Next_ckpt-and-data/ckpt-and-data.zip](https://github.com/Coobiw/MiniGPT4Qwen/releases/download/MPP-Qwen-Next_ckpt-and-data/ckpt-and-data.zip)中，llava_instuct和videochatgpt目录里的`analysis.py`脚本
+### 图像指令微调数据格式
+单轮(instruction和output为`str`)：
+```json
+[
+    {
+        "image": "000000215677.jpg",
+        "instruction": "<Img><ImageHere></Img> {question}",
+        "output": "{answer}"
+    },
+]
+```
+
+多轮(instruction和output为等长的`list`)：
+```json
+{
+        "image": "000000479443.jpg",
+        "instruction": [
+            "<Img><ImageHere></Img> {question1}",
+            "{question2}",
+            "..."
+        ],
+        "output": [
+            "{answer1}",
+            "{answer2}",
+            "..."
+        ]
+    },
+```
+
+### 视频指令微调数据格式
+```json
+[
+    {
+        "video": "v_k_ZXmr8pmrs.mkv",
+        "instruction": "<Img><ImageHere></Img> {question}",
+        "output": "{answer}"
+    }
+]
+```
 
 ## Acknowledgement
 
 - [Lavis](https://github.com/salesforce/LAVIS) 本仓库是基于lavis进行构建的，且使用了其中BLIP2的ViT和Q-former
-- [QwenLM](https://github.com/QwenLM/Qwen) 本仓库的语言模型采用Qwen-14B-Chat
+- [QwenLM](https://github.com/QwenLM/Qwen) 本仓库的语言模型采用Qwen7B-Chat
 - [DeepSpeed](https://github.com/microsoft/DeepSpeed) 👍
 - [DeepSpeedExamples](https://github.com/microsoft/DeepSpeedExamples) 👍👍
 - [LLaVA](https://github.com/haotian-liu/LLaVA) 参照其训练范式，使用了其预训练和指令微调数据
+- [VideoChatGPT](https://github.com/mbzuai-oryx/Video-ChatGPT) 使用其视频sft的100k数据
+- [Video-LLaVA](https://github.com/PKU-YuanGroup/Video-LLaVA) 提供videochatgpt视频数据的百度网盘下载链接
 
 ## License
 
