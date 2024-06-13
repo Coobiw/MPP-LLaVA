@@ -1,9 +1,5 @@
-<video width="600" controls>
-  <source src="https://github.com/Coobiw/MiniGPT4Qwen/assets/MPPQwen/Sora_Tokyo_Walk_example.MOV" type="video/quicktime">
-</video>
-
 # MPP-Qwen-Next: Multimodal Pipeline Parallel based on QwenLM
-
+https://github.com/Coobiw/MiniGPT4Qwen/assets/MPPQwen/Sora_Tokyo_Walk_example.MOV
 ## News
 - [2024/6] 🔥 **MPP-Qwen-Next**: 加入llava的多轮对话sft数据以及videochatgpt的100k sft数据，*支持图像多轮对话，视频对话，并涌现出多图对话能力*
 - [2024/5] 🔥 代码支持多轮对话sft、视频sft、多图sft
