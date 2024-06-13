@@ -1,3 +1,20 @@
+- [MPP-Qwen-Next: Multimodal Pipeline Parallel based on QwenLM](#mpp-qwen-next-multimodal-pipeline-parallel-based-on-qwenlm)
+  - [News](#news)
+  - [Features](#features)
+    - [图像-单轮问答](#图像-单轮问答)
+    - [图像-多轮对话](#图像-多轮对话)
+    - [视频-对话](#视频-对话)
+    - [多图-对话（未经过多图sft，视频sft后涌现该能力）](#多图-对话未经过多图sft视频sft后涌现该能力)
+  - [TODO LIST](#todo-list)
+  - [Installation](#installation)
+  - [Weight\&Data Preparation](#weightdata-preparation)
+  - [推理](#推理)
+  - [流水线并行训练(PP+DP)](#流水线并行训练ppdp)
+  - [二阶段训练loss曲线参考](#二阶段训练loss曲线参考)
+  - [Custom Data Format(如果你想continue training)](#custom-data-format如果你想continue-training)
+  - [Acknowledgement](#acknowledgement)
+  - [License](#license)
+
 # MPP-Qwen-Next: Multimodal Pipeline Parallel based on QwenLM
 https://github.com/Coobiw/MiniGPT4Qwen/assets/48615375/0e7c33f6-33d3-478a-ab0e-ecc116aeec78
 
