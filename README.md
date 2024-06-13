@@ -1,9 +1,7 @@
 # MPP-Qwen-Next: Multimodal Pipeline Parallel based on QwenLM
-<div align="center">
-  <a href="https://youtu.be/zD67KvIeT0M" target="_blank">
-    <img src="https://img.youtube.com/vi/zD67KvIeT0M/0.jpg" alt="Watch the video-chat example" style="width:80%;"/>
-  </a>
-</div>
+
+[![Watch the video-chat example](assets/MPPQwen/tokyo-walk.webp)](https://youtu.be/zD67KvIeT0M)
+
 
 ## News
 - [2024/6] 🔥 **MPP-Qwen-Next**: 加入llava的多轮对话sft数据以及videochatgpt的100k sft数据，*支持图像多轮对话，视频对话，并涌现出多图对话能力*
