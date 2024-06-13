@@ -1,6 +1,8 @@
 # MPP-Qwen-Next: Multimodal Pipeline Parallel based on QwenLM
+https://github.com/Coobiw/MiniGPT4Qwen/assets/48615375/0e7c33f6-33d3-478a-ab0e-ecc116aeec78
+
 <video controls>
-  <source src="https://www.youtube.com/watch?v=zD67KvIeT0M" type="video/mp4">
+  <source src="https://github.com/Coobiw/MiniGPT4Qwen/assets/48615375/0e7c33f6-33d3-478a-ab0e-ecc116aeec78" type="video/mp4">
   Your browser does not support the video tag.
 </video>
 
