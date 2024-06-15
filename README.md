@@ -1,5 +1,6 @@
 - [MPP-Qwen-Next: Multimodal Pipeline Parallel based on QwenLM](#mpp-qwen-next-multimodal-pipeline-parallel-based-on-qwenlm)
   - [News](#news)
+  - [Framework](#framework)
   - [Features](#features)
     - [图像-单轮问答](#图像-单轮问答)
     - [图像-多轮对话](#图像-多轮对话)
@@ -24,12 +25,16 @@ https://github.com/Coobiw/MiniGPT4Qwen/assets/48615375/0e7c33f6-33d3-478a-ab0e-e
 </video>
 
 ## News
-- [2024/6] 🔥 **MPP-Qwen-Next**: 加入llava的多轮对话sft数据以及videochatgpt的100k sft数据，**支持图像多轮对话，视频对话，并涌现出多图对话能力**
+- [2024/6] 🔥 **MPP-Qwen-Next**: 加入llava的多轮对话sft数据以及videochatgpt的100k sft数据，**支持图像多轮对话，视频对话，并涌现出多图对话能力** [知乎博客](https://zhuanlan.zhihu.com/p/703597348)
 - [2024/5] 🔥 代码支持多轮对话sft、视频sft、多图sft
 - [2024/4] 🔥 支持多卡推理，修正chat template以获得更好的对话效果 [知乎博客](https://zhuanlan.zhihu.com/p/698549757)
 - [2024/3] 🔥 **MPPQwen-14B**: Extend MiniGPT4Qwen-14B to MPP-Qwen14B(Multimodal Pipeline Parallel). 数据和训练范式参照LLaVA（pretrain + sft)，指令微调时打开LLM。**全部训练过程在6张RTX4090上完成** [README&Tutorial](https://github.com/Coobiw/MiniGPT4Qwen/blob/master/MPPQwen14B_README.md)； [知乎博客](https://zhuanlan.zhihu.com/p/687106694)
 - [2024/2] 🔥 **MiniGPT4Qwen-14B**: Scaling Up MiniGPT4Qwen to 14B. **使用DeepSpeed Pipeline Parallel让全过程仅使用2张4090显卡** [README&Tutorial](https://github.com/Coobiw/MiniGPT4Qwen/blob/master/MiniGPT4Qwen_README.md)； [知乎博客](https://zhuanlan.zhihu.com/p/684462477)
 - [2023/10] 🔥 **MiniGPT4Qwen**：采用18.8k的高质量双语指令微调数据，得到**单阶段训练的个人版双语MLLM** [README&Tutorial](https://github.com/Coobiw/MiniGPT4Qwen/blob/master/MiniGPT4Qwen_README.md)； [知乎博客](https://zhuanlan.zhihu.com/p/664612306)
+
+## Framework
+
+![](./assets/MPPQwen/framework.png)
 
 ## Features
 
