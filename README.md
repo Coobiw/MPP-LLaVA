@@ -1,3 +1,7 @@
+<div align="center">
+    <img src="./assets/MPPQwen/logo.webp" alt="MPP-Qwen-Next logo" width="300" />
+</div>
+
 - [MPP-Qwen-Next: Multimodal Pipeline Parallel based on QwenLM](#mpp-qwen-next-multimodal-pipeline-parallel-based-on-qwenlm)
   - [News](#news)
   - [Framework](#framework)
@@ -16,9 +20,6 @@
   - [Acknowledgement](#acknowledgement)
   - [License](#license)
 
-<div align="center">
-    <img src="./assets/MPPQwen/logo.webp" alt="图像描述" />
-</div>
 
 
 # MPP-Qwen-Next: Multimodal Pipeline Parallel based on QwenLM
