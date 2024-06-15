@@ -19,6 +19,8 @@
 <div align="center">
     <img src="./assets/MPPQwen/logo.webp" alt="图像描述" />
 </div>
+
+
 # MPP-Qwen-Next: Multimodal Pipeline Parallel based on QwenLM
 
 https://github.com/Coobiw/MiniGPT4Qwen/assets/48615375/0e7c33f6-33d3-478a-ab0e-ecc116aeec78
