@@ -17,11 +17,18 @@ def convert_model_to_pth(pipeline_model_dir):
             model_state_dict['llm_proj.weight'] = small_static_dict["visionpipe.llm_proj.weight"]
             model_state_dict['llm_proj.bias'] = small_static_dict["visionpipe.llm_proj.bias"]
             model_state_dict["llm_model.transformer.wte.weight"] = small_static_dict["wtepipe.word_embeddings.weight"]
-        elif layer_i == 46:
+        elif layer_i == 46: # for Qwen-14B LLM
             model_state_dict["llm_model.lm_head.weight"] = small_static_dict["lm_head.weight"]
-        elif layer_i == 45:
+        elif layer_i == 45: # for Qwen-14B LLM
             model_state_dict["llm_model.transformer.ln_f.weight"] = small_static_dict["final_layernorm.weight"]
         elif layer_i <= 44 and layer_i >=5:
+            # for Qwe-7B LLM(will not influence the 14B LLM)
+            if "final_layernorm" in k:
+                model_state_dict["llm_model.transformer.ln_f.weight"] = v
+                continue
+            if "lm_head" in k:
+                model_state_dict["llm_model.lm_head.weight"] = v
+                continue
             for k, v in small_static_dict.items():
                 model_state_dict["llm_model.transformer." + k.replace("layer",f"h.{layer_i-5}")] = v
         else:
