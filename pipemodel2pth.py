@@ -45,4 +45,5 @@ def set_args():
 
 if __name__ == '__main__':
     args = set_args()
+    print("Only Support Qwen7B-Chat & Qwen-14B-Chat")
     convert_model_to_pth(args.ckpt_dir)
