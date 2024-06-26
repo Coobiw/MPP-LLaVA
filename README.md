@@ -31,6 +31,13 @@ https://github.com/Coobiw/MiniGPT4Qwen/assets/48615375/0e7c33f6-33d3-478a-ab0e-e
   Your browser does not support the video tag.
 </video>
 
+https://github.com/Coobiw/MiniGPT4Qwen/assets/48615375/963416dd-fd97-4680-b7ac-fa4a14beaaae
+
+<video controls>
+  <source src="https://github.com/Coobiw/MiniGPT4Qwen/assets/48615375/963416dd-fd97-4680-b7ac-fa4a14beaaae" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+
 ## News
 - [2024/6] 🔥 **MPP-Qwen-Next**: 加入llava的多轮对话sft数据以及videochatgpt的100k sft数据，**支持图像多轮对话，视频对话，并涌现出多图对话能力** [知乎博客](https://zhuanlan.zhihu.com/p/703597348)
 - [2024/5] 🔥 代码支持多轮对话sft、视频sft、多图sft
