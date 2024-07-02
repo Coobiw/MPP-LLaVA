@@ -74,4 +74,6 @@ wget https://github.com/Coobiw/MiniGPT4Qwen/releases/download/MPP-Qwen-Next_ckpt
 unzip ckpt-and-data.zip
 ```
 
-### 4.sft后的权重（百度网盘）
+### 4.sft后的权重（百度网盘/modelscope）
+- [modelscope链接](https://www.modelscope.cn/models/Coobiw/MPP-Qwen-Next)
+- [百度网盘链接](https://pan.baidu.com/s/15rfwuCfM_sdViWQJv1mZmg?pwd=baka)

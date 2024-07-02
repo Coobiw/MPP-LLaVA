@@ -39,6 +39,7 @@ https://github.com/Coobiw/MiniGPT4Qwen/assets/48615375/0e7c33f6-33d3-478a-ab0e-e
 </video>
 
 ## News
+- [2024/6] 🔥 开源MPP-Qwen-Next的sft权重(15GB) [modelscope链接](https://www.modelscope.cn/models/Coobiw/MPP-Qwen-Next) [百度网盘链接](https://pan.baidu.com/s/15rfwuCfM_sdViWQJv1mZmg?pwd=baka)
 - [2024/6] 🔥 **MPP-Qwen-Next**: 加入llava的多轮对话sft数据以及videochatgpt的100k sft数据，**支持图像多轮对话，视频对话，并涌现出多图对话能力** [知乎博客](https://zhuanlan.zhihu.com/p/703597348)
 - [2024/5] 🔥 代码支持多轮对话sft、视频sft、多图sft
 - [2024/4] 🔥 支持多卡推理，修正chat template以获得更好的对话效果 [知乎博客](https://zhuanlan.zhihu.com/p/698549757)
@@ -73,7 +74,7 @@ https://github.com/Coobiw/MiniGPT4Qwen/assets/48615375/0e7c33f6-33d3-478a-ab0e-e
 
 ## TODO LIST
 - [ ] 加入huggingface-transformers实现，并push到huggingface
-- [ ] 开源sft权重（huggingface或百度网盘）
+- [x] 开源sft权重（modelscope & 百度网盘）
 - [x] 支持单图推理、多图推理、视频推理
 - [x] 支持model parallelism的推理（使用了transformers的`device_map="auto"`）
 - [x] 开源pretrain权重
@@ -97,7 +98,11 @@ pip install -e .
 训练数据请参照：[DATA.md](https://github.com/Coobiw/MiniGPT4Qwen/blob/master/DATA.md)
 
 ## 推理
+请先按照[WEIGHT.md](https://github.com/Coobiw/MiniGPT4Qwen/blob/master/WEIGHT.md)配置好权重
 
+并在以下链接中二选一，下载sft后的模型权重（15GB）：
+- [modelscope链接](https://www.modelscope.cn/models/Coobiw/MPP-Qwen-Next)
+- [百度网盘链接](https://pan.baidu.com/s/15rfwuCfM_sdViWQJv1mZmg?pwd=baka)
 ### 运行命令行demo
 
 **Single-GPU Inference**
