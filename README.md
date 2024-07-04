@@ -19,6 +19,7 @@
   - [Custom Data Format(如果你想continue training)](#custom-data-format如果你想continue-training)
   - [Acknowledgement](#acknowledgement)
   - [License](#license)
+  - [Star History](#star-history)
 
 
 
@@ -275,3 +276,7 @@ sft:
 
 - 本仓库的许多代码是基于[Lavis](https://github.com/salesforce/LAVIS) 的，其采用 [BSD 3-Clause License](https://github.com/Vision-CAIR/MiniGPT-4/blob/main/LICENSE_Lavis.md).
 - 本仓库采用Qwen-7B-Chat，支持商用和科研、开发用途，其License为[LICENSE](https://github.com/QwenLM/Qwen/blob/main/LICENSE)
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=Coobiw/MPP-LLaVA&type=Date)](https://star-history.com/#Coobiw/MPP-LLaVA&Date)
