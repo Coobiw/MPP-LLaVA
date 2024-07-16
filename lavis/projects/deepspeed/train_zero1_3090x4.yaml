@@ -125,10 +125,7 @@ run:
         offload_optimizer:
           device: "cpu"
           pin_memory: True
-        allgather_partitions: True
-        allgather_bucket_size: 2e8
         overlap_comm: True
-        reduce_scatter: True
-        reduce_bucket_size: 2e8
         contiguous_gradients: True
+        sub_group_size: 1e9
 
