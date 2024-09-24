@@ -222,6 +222,8 @@ sft:
 
 ## Custom Data Format(如果你想continue training)
 处理函数可以参考: [https://github.com/Coobiw/MiniGPT4Qwen/releases/download/MPP-Qwen-Next_ckpt-and-data/ckpt-and-data.zip](https://github.com/Coobiw/MiniGPT4Qwen/releases/download/MPP-Qwen-Next_ckpt-and-data/ckpt-and-data.zip)中，llava_instuct和videochatgpt目录里的`analysis.py`脚本
+
+***P.S.: 如果路径经常出错，可以把所有路径都改成绝对路径（包括dataset configs）***
 ### 图像指令微调数据格式
 单轮(instruction和output为`str`)：
 ```json
