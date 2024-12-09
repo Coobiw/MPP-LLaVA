@@ -22,14 +22,14 @@ def convert_model_to_pth(pipeline_model_dir):
         elif layer_i == 45: # for Qwen-14B LLM
             model_state_dict["llm_model.transformer.ln_f.weight"] = small_static_dict["final_layernorm.weight"]
         elif layer_i <= 44 and layer_i >=5:
-            # for Qwe-7B LLM(will not influence the 14B LLM)
-            if "final_layernorm" in k:
-                model_state_dict["llm_model.transformer.ln_f.weight"] = v
-                continue
-            if "lm_head" in k:
-                model_state_dict["llm_model.lm_head.weight"] = v
-                continue
             for k, v in small_static_dict.items():
+                # for Qwe-7B LLM(will not influence the 14B LLM)
+                if "final_layernorm" in k:
+                    model_state_dict["llm_model.transformer.ln_f.weight"] = v
+                    continue
+                if "lm_head" in k:
+                    model_state_dict["llm_model.lm_head.weight"] = v
+                    continue
                 model_state_dict["llm_model.transformer." + k.replace("layer",f"h.{layer_i-5}")] = v
         else:
             continue
