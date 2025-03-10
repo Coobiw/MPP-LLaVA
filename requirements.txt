@@ -44,3 +44,6 @@ moviepy
 # wandb
 wandb==0.17.0
 protobuf==3.19.1
+
+# others
+spacy==3.7
